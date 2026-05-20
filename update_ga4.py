@@ -77,7 +77,7 @@ def run():
                 if sessions == 0 and transactions == 0 and revenue == 0:
                     continue
 
-                                               sm_lower = source_medium.lower()
+                sm_lower = source_medium.lower()
                 is_crm = (('insider' in sm_lower and 'insite' not in sm_lower) or 
                           'firebase' in sm_lower or 
                           'pushnews' in sm_lower)
