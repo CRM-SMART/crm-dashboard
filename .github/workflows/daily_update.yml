@@ -2,11 +2,20 @@ name: "Automacao Dashboard GA4"
 
 on:
   schedule:
+    # Rodar às 06:00 BRT (09:00 UTC) e 14:00 BRT (17:00 UTC)
     - cron: '0 9,17 * * *'
-  workflow_dispatch: 
+  workflow_dispatch: # Permite rodar o script manualmente clicando em um botão no GitHub
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  atualizar_dados:
+  atualizar_dados_e_publicar:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
@@ -35,3 +44,15 @@ jobs:
           git add dados_dashboard.csv
           git diff --quiet && git diff --staged --quiet || git commit -m "⚙️ Auto-update: Extraindo dados atualizados do GA4"
           git push origin main
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v3
+        
+      - name: Subir arquivos para o Pages
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '.'
+          
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
