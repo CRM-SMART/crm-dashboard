@@ -39,7 +39,8 @@ def run():
     # Cabeçalho esperado pelo Dashboard
     headers = [
         "Ponto de Venda", "Data", "Origem / mídia da sessão", 
-        "Campanha da sessão", "Sessões", "Transações", "Receita"
+        "Campanha da sessão", "Sessões", "Transações", "Receita",
+        "Origem Agrupada"
     ]
     csv_rows.append(headers)
 
@@ -76,6 +77,13 @@ def run():
                 if sessions == 0 and transactions == 0 and revenue == 0:
                     continue
 
+                                               sm_lower = source_medium.lower()
+                is_crm = (('insider' in sm_lower and 'insite' not in sm_lower) or 
+                          'firebase' in sm_lower or 
+                          'pushnews' in sm_lower)
+                
+                origem_agrupada = "CRM" if is_crm else "Outros Canais"
+
                 csv_rows.append([
                     prop_name,
                     date_val,
@@ -83,7 +91,8 @@ def run():
                     campaign,
                     sessions,
                     transactions,
-                    revenue
+                    revenue,
+                    origem_agrupada
                 ])
                 
             print(f"Sucesso: Extraídas {len(response.rows)} linhas de {prop_name}.")
