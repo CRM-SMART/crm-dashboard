@@ -640,7 +640,7 @@
       </div>
       <div class="filter-sep"></div>
       <div class="filter-group multi-select" id="fg-origens">
-        <label>Comparar Origens</label>
+        <label>Origens</label>
         <div class="ms-btn" onclick="document.getElementById('ms-list').classList.toggle('open')">
           <span id="ms-label">Nenhuma selecionada</span>
           <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
@@ -900,12 +900,10 @@
     function filterByOrigens(baseData) {
       if (!window.selectedOrigens || window.selectedOrigens.length === 0) return baseData;
       const incCrm = window.selectedOrigens.includes('CRM_TOTAL');
-      const incOut = window.selectedOrigens.includes('OUTROS_TOTAL');
-      const spec = new Set(window.selectedOrigens.filter(o => o !== 'CRM_TOTAL' && o !== 'OUTROS_TOTAL'));
+      const spec = new Set(window.selectedOrigens.filter(o => o !== 'CRM_TOTAL'));
       
       return baseData.filter(r => {
         if (incCrm && isCRM(r.canal)) return true;
-        if (incOut && !isCRM(r.canal)) return true;
         if (spec.has(r.midia)) return true;
         return false;
       });
@@ -1237,7 +1235,7 @@
       document.getElementById('f-inicio').value = '2025-01-01';
       document.getElementById('f-fim').value = '2026-05-17';
       document.querySelectorAll('#ms-list input').forEach(cb => {
-        cb.checked = cb.value === 'CRM_TOTAL' || cb.value === 'OUTROS_TOTAL';
+        cb.checked = cb.value === 'CRM_TOTAL';
       });
       document.getElementById('cmp-a-ini').value = '2025-01-01';
       document.getElementById('cmp-a-fim').value = '2026-05-17';
@@ -1313,9 +1311,12 @@
 
           const origensMap = {};
           rawData.forEach(r => {
-            if (r.midia) origensMap[r.midia] = (origensMap[r.midia] || 0) + r.receita;
+            if (r.midia) {
+              if (!origensMap[r.midia]) origensMap[r.midia] = { rec: 0, isCRM: isCRM(r.canal) };
+              origensMap[r.midia].rec += r.receita;
+            }
           });
-          const origensValidas = Object.keys(origensMap).filter(o => origensMap[o] > 0).sort((a, b) => origensMap[b] - origensMap[a]);
+          const origensValidas = Object.keys(origensMap).filter(o => origensMap[o].rec > 0).sort((a, b) => origensMap[b].rec - origensMap[a].rec);
           const list = document.getElementById('ms-list');
           if (list) {
             let html = `
@@ -1325,8 +1326,9 @@
               </div>
             `;
             html += '<label class="ms-item"><input type="checkbox" value="CRM_TOTAL" onchange="updateAll()" checked><div><div>CRM (Total)</div><div class="ms-summary">Visão consolidada</div></div></label>';
-            html += '<label class="ms-item"><input type="checkbox" value="OUTROS_TOTAL" onchange="updateAll()" checked><div><div>Outros Canais (Total)</div><div class="ms-summary">Visão consolidada</div></div></label>';
-            html += origensValidas.map(o => '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(origensMap[o]) + '</div></div></label>').join('');
+            origensValidas.forEach(o => {
+              html += '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(origensMap[o].rec) + '</div></div></label>';
+            });
             list.innerHTML = html;
           }
           document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
