@@ -1,14 +1,10 @@
 import os
 import csv
-from datetime import datetime, timedelta
-import json
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import (
     DateRange, Dimension, Metric, RunReportRequest
 )
 
-# Se rodar localmente, ele tenta usar o arquivo JSON. 
-# No GitHub Actions, ele criará o JSON a partir de um Secret antes de rodar.
 CREDENTIAL_PATH = "agente-guanabara-16ba36a165a7.json"
 if os.path.exists(CREDENTIAL_PATH):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
@@ -18,9 +14,13 @@ PROPERTY_IDS = {
     "App": "326912205"
 }
 
-def format_date(ga_date):
-    # GA4 date is YYYYMMDD
-    return f"{ga_date[6:8]}/{ga_date[4:6]}/{ga_date[0:4]}"
+def is_valid_row(row):
+    try:
+        rev = float(row.metric_values[2].value)
+        sess = int(row.metric_values[0].value)
+        return rev > 0 or sess > 0
+    except:
+        return False
 
 def run():
     print("Iniciando extração do GA4...")
@@ -65,7 +65,10 @@ def run():
                 if not is_valid_row(row):
                     continue
 
-                date_val = row.dimension_values[0].value
+                # O GA4 retorna a data no formato YYYYMMDD, então formatamos
+                raw_date = row.dimension_values[0].value
+                date_val = f"{raw_date[0:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
+                
                 source_medium = row.dimension_values[1].value
                 campaign = row.dimension_values[2].value
                 sessions = row.metric_values[0].value
