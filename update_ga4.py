@@ -41,73 +41,86 @@ def run():
     for prop_name, prop_id in PROPERTY_IDS.items():
         print(f"Buscando dados em: {prop_name} ({prop_id})...")
         
-        request = RunReportRequest(
-            property=f"properties/{prop_id}",
-            dimensions=[
-                Dimension(name="date"),
-                Dimension(name="sessionSourceMedium"),
-                Dimension(name="sessionCampaignName")
-            ],
-            metrics=[
-                Metric(name="sessions"),
-                Metric(name="transactions"),
-                Metric(name="purchaseRevenue")
-            ],
-            date_ranges=[DateRange(start_date="2025-01-01", end_date="today")],
-            limit=250000
-        )
+        offset = 0
+        limit_per_page = 100000
         
-        try:
-            response = client.run_report(request)
-            print(f"[{prop_name}] Linhas retornadas: {len(response.rows)}")
+        while True:
+            request = RunReportRequest(
+                property=f"properties/{prop_id}",
+                dimensions=[
+                    Dimension(name="date"),
+                    Dimension(name="sessionSourceMedium"),
+                    Dimension(name="sessionCampaignName")
+                ],
+                metrics=[
+                    Metric(name="sessions"),
+                    Metric(name="transactions"),
+                    Metric(name="purchaseRevenue")
+                ],
+                date_ranges=[DateRange(start_date="2025-01-01", end_date="today")],
+                limit=limit_per_page,
+                offset=offset
+            )
             
-            for row in response.rows:
-                if not is_valid_row(row):
-                    continue
+            try:
+                response = client.run_report(request)
+                num_rows = len(response.rows)
+                print(f"[{prop_name}] Bloco extraído (offset {offset}): {num_rows} linhas")
+                
+                for row in response.rows:
+                    if not is_valid_row(row):
+                        continue
 
-                # O GA4 retorna a data no formato YYYYMMDD, então formatamos
-                raw_date = row.dimension_values[0].value
-                date_val = f"{raw_date[0:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
-                
-                source_medium = row.dimension_values[1].value
-                campaign = row.dimension_values[2].value
-                sessions = row.metric_values[0].value
-                transactions = row.metric_values[1].value
-                revenue = row.metric_values[2].value
-                
-                # Tratar (not set) e vazios
-                if source_medium in ["(not set)", "", None]:
-                    source_medium = "(not set)"
+                    # O GA4 retorna a data no formato YYYYMMDD, então formatamos
+                    raw_date = row.dimension_values[0].value
+                    date_val = f"{raw_date[0:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
                     
-                if campaign in ["(not set)", "", None]:
-                    campaign = "(not set)"
+                    source_medium = row.dimension_values[1].value
+                    campaign = row.dimension_values[2].value
+                    sessions = row.metric_values[0].value
+                    transactions = row.metric_values[1].value
+                    revenue = row.metric_values[2].value
+                    
+                    # Tratar (not set) e vazios
+                    if source_medium in ["(not set)", "", None]:
+                        source_medium = "(not set)"
+                        
+                    if campaign in ["(not set)", "", None]:
+                        campaign = "(not set)"
 
-                sm_lower = source_medium.lower()
-                is_insider = 'insider' in sm_lower and 'insite' not in sm_lower
-                is_crm_other = 'firebase' in sm_lower or 'pushnews' in sm_lower
-                is_crm = is_insider or is_crm_other
+                    sm_lower = source_medium.lower()
+                    is_insider = 'insider' in sm_lower and 'insite' not in sm_lower
+                    is_crm_other = 'firebase' in sm_lower or 'pushnews' in sm_lower
+                    is_crm = is_insider or is_crm_other
 
-                origem_agrupada = "CRM" if is_crm else "Outros Canais"
+                    origem_agrupada = "CRM" if is_crm else "Outros Canais"
 
-                # Aglomerar a origem/mídia conforme o pedido
-                if is_insider:
-                    source_medium = "Insider"
-                elif is_crm_other:
-                    source_medium = "CRM"
+                    # Aglomerar a origem/mídia conforme o pedido
+                    if is_insider:
+                        source_medium = "Insider"
+                    elif is_crm_other:
+                        source_medium = "CRM"
 
-                csv_rows.append([
-                    prop_name,
-                    date_val,
-                    source_medium,
-                    campaign,
-                    sessions,
-                    transactions,
-                    revenue,
-                    origem_agrupada
-                ])
-                
-        except Exception as e:
-            print(f"Erro na propriedade {prop_name}: {e}")
+                    csv_rows.append([
+                        prop_name,
+                        date_val,
+                        source_medium,
+                        campaign,
+                        sessions,
+                        transactions,
+                        revenue,
+                        origem_agrupada
+                    ])
+                    
+                # Se o número de linhas retornadas for menor que o limite, chegamos ao fim
+                if num_rows < limit_per_page:
+                    break
+                    
+                offset += limit_per_page
+                    
+            except Exception as e:
+                print(f"Erro na propriedade {prop_name}: {e}")
+                break
 
     output_file = "dados_dashboard.csv"
     try:
