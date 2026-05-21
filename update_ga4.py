@@ -30,10 +30,7 @@ def run():
         print("Erro ao inicializar o cliente do GA4. Verifique suas credenciais.")
         print(e)
         return
-
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-    client = BetaAnalyticsDataClient()
-    
+        
     headers = [
         "Ponto de Venda", "Data", "Origem / mídia da sessão", 
         "Campanha da sessão", "Sessões", "Transações", "Receita",
