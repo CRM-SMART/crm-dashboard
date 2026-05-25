@@ -23,7 +23,7 @@ def is_valid_row(row):
         return False
 
 def run():
-    print("Iniciando extraÃ§Ã£o do GA4...")
+    print("Iniciando extração do GA4...")
     try:
         client = BetaAnalyticsDataClient()
     except Exception as e:
@@ -32,8 +32,8 @@ def run():
         return
         
     headers = [
-        "Ponto de Venda", "Data", "Origem / mÃ­dia da sessÃ£o", 
-        "Campanha da sessÃ£o", "SessÃµes", "TransaÃ§Ãµes", "Receita",
+        "Ponto de Venda", "Data", "Origem / mídia da sessão", 
+        "Campanha da sessão", "Sessões", "Transações", "Receita",
         "Origem Agrupada"
     ]
     csv_rows = []
@@ -65,13 +65,12 @@ def run():
             try:
                 response = client.run_report(request)
                 num_rows = len(response.rows)
-                print(f"[{prop_name}] Bloco extraÃ­do (offset {offset}): {num_rows} linhas")
+                print(f"[{prop_name}] Bloco extraído (offset {offset}): {num_rows} linhas")
                 
                 for row in response.rows:
                     if not is_valid_row(row):
                         continue
 
-                    # O GA4 retorna a data no formato YYYYMMDD, entÃ£o formatamos
                     raw_date = row.dimension_values[0].value
                     date_val = f"{raw_date[0:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
                     
@@ -81,10 +80,8 @@ def run():
                     transactions = row.metric_values[1].value
                     revenue = row.metric_values[2].value
                     
-                    # Tratar (not set) e vazios
                     if source_medium in ["(not set)", "", None]:
                         source_medium = "(not set)"
-                        
                     if campaign in ["(not set)", "", None]:
                         campaign = "(not set)"
 
@@ -93,8 +90,12 @@ def run():
                     # Definir Origem Agrupada (Tipo de Canal)
                     origem_agrupada = "Others"
                     
-                    if sm_lower in ["(not set)", "", "none"] or "(direct) / (none)" in sm_lower:
+                    if sm_lower in ["(not set)", "", "none"]:
+                        origem_agrupada = "Not Set"
+                    elif "(direct) / (none)" in sm_lower:
                         origem_agrupada = "Direct"
+                    elif "insider" in sm_lower and "insite" in sm_lower:
+                        origem_agrupada = "Organic"
                     elif "insider" in sm_lower or "architect" in sm_lower or "email" in sm_lower or "notification" in sm_lower or "web_push" in sm_lower or "pushnews" in sm_lower or "mobile_messaging" in sm_lower or "sms" in sm_lower or "firebase" in sm_lower:
                         origem_agrupada = "CRM"
                     elif "insite" in sm_lower or "emkt" in sm_lower or "whatsapp" in sm_lower:
@@ -108,25 +109,14 @@ def run():
                     elif "blog" in sm_lower:
                         origem_agrupada = "Blog"
 
-                    # Se for CRM, nÃ³s padronizamos o nome da mÃ­dia como Insider ou CRM (para manter a visÃ£o limpa)
-                    if origem_agrupada == "CRM":
-                        if "insider" in sm_lower and "insite" not in sm_lower:
-                            source_medium = "Insider"
-                        else:
-                            source_medium = "CRM"
+                    # O nome da mídia (source_medium) será mantido o original do GA4, 
+                    # para que você possa ver exatamente quais canais formaram o grupo CRM.
 
                     csv_rows.append([
-                        prop_name,
-                        date_val,
-                        source_medium,
-                        campaign,
-                        sessions,
-                        transactions,
-                        revenue,
-                        origem_agrupada
+                        prop_name, date_val, source_medium, campaign,
+                        sessions, transactions, revenue, origem_agrupada
                     ])
                     
-                # Se o nÃºmero de linhas retornadas for menor que o limite, chegamos ao fim
                 if num_rows < limit_per_page:
                     break
                     
@@ -142,7 +132,7 @@ def run():
             writer = csv.writer(f)
             writer.writerow(headers)
             writer.writerows(csv_rows)
-        print(f"Processo concluÃ­do! Arquivo {output_file} gerado com sucesso.")
+        print(f"Processo concluído! Arquivo {output_file} gerado com sucesso.")
     except Exception as e:
         print(f"Erro ao salvar CSV: {e}")
 
