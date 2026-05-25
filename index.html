@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard CRM — Grupo Guanabara</title>
+  <title>Dashboard CRM â€” Grupo Guanabara</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -614,7 +614,7 @@
       <div class="logo">GG</div>
       <div>
         <div class="header-title">Dashboard CRM</div>
-        <div class="header-sub">Grupo Guanabara · Sessões &amp; Receita</div>
+        <div class="header-sub">Grupo Guanabara Â· SessÃµes &amp; Receita</div>
       </div>
     </div>
     <span class="status-badge" id="status-txt">Carregando...</span>
@@ -634,8 +634,8 @@
       <div class="filter-group"><label>Comparar com</label>
         <select id="f-cmp">
           <option value="none">Sem comparativo</option>
-          <option value="mom">MoM — Mês anterior</option>
-          <option value="yoy">YoY — Ano anterior</option>
+          <option value="mom">MoM â€” MÃªs anterior</option>
+          <option value="yoy">YoY â€” Ano anterior</option>
         </select>
       </div>
       <div class="filter-sep"></div>
@@ -650,33 +650,33 @@
         </div>
         <div class="ms-dropdown" id="ms-list"></div>
       </div>
-      <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2025-01-01" /></div>
+      <div class="filter-group"><label>Data inÃ­cio</label><input type="date" id="f-inicio" value="2025-01-01" /></div>
       <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17" /></div>
       <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
     </div>
 
     <!-- KPIs linha 1 -->
-    <p class="section-title">Visão geral — KPIs Globais</p>
+    <p class="section-title">VisÃ£o geral â€” KPIs Globais</p>
     <div class="kpi-grid">
       <div class="kpi">
         <div class="kpi-label" id="lbl-kpi-rec">Receita Total</div>
-        <div class="kpi-value" id="k-receita-crm">—</div>
+        <div class="kpi-value" id="k-receita-crm">â€”</div>
       </div>
       <div class="kpi">
         <div class="kpi-label" id="lbl-kpi-share">Share %</div>
-        <div class="kpi-value" id="k-share-crm">—</div>
+        <div class="kpi-value" id="k-share-crm">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Sessões</div>
-        <div class="kpi-value" id="k-sessoes">—</div>
+        <div class="kpi-label">SessÃµes</div>
+        <div class="kpi-value" id="k-sessoes">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Transações</div>
-        <div class="kpi-value" id="k-trans">—</div>
+        <div class="kpi-label">TransaÃ§Ãµes</div>
+        <div class="kpi-value" id="k-trans">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Conversão %</div>
-        <div class="kpi-value" id="k-conv">—</div>
+        <div class="kpi-label">ConversÃ£o %</div>
+        <div class="kpi-value" id="k-conv">â€”</div>
       </div>
     </div>
 
@@ -684,30 +684,30 @@
     <div class="kpi-grid" style="margin-bottom:1.5rem">
       <div class="kpi">
         <div class="kpi-label">Receita Insider</div>
-        <div class="kpi-value" id="k-receita-insider">—</div>
+        <div class="kpi-value" id="k-receita-insider">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Conversão Insider</div>
-        <div class="kpi-value" id="k-conv-insider">—</div>
+        <div class="kpi-label">ConversÃ£o Insider</div>
+        <div class="kpi-value" id="k-conv-insider">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Sessões Insider</div>
-        <div class="kpi-value" id="k-sess-insider">—</div>
+        <div class="kpi-label">SessÃµes Insider</div>
+        <div class="kpi-value" id="k-sess-insider">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Transações Insider</div>
-        <div class="kpi-value" id="k-trans-insider">—</div>
+        <div class="kpi-label">TransaÃ§Ãµes Insider</div>
+        <div class="kpi-value" id="k-trans-insider">â€”</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Ticket médio</div>
-        <div class="kpi-value" id="k-ticket">—</div>
+        <div class="kpi-label">Ticket mÃ©dio</div>
+        <div class="kpi-value" id="k-ticket">â€”</div>
       </div>
     </div>
 
-    <!-- Visão geral -->
-    <p class="section-title">Visão geral</p>
+    <!-- VisÃ£o geral -->
+    <p class="section-title">VisÃ£o geral</p>
     <div class="card">
-      <h3>Receita diária (Área)</h3>
+      <h3>Receita diÃ¡ria (Ãrea)</h3>
       <div class="legend" id="leg-diario"></div>
       <div style="position:relative;width:100%;height:220px"><canvas id="chart-diario"></canvas></div>
     </div>
@@ -718,7 +718,7 @@
         <div style="position:relative;width:100%;height:200px"><canvas id="chart-canal"></canvas></div>
       </div>
       <div class="card">
-        <h3>Sessões por ponto de venda</h3>
+        <h3>SessÃµes por ponto de venda</h3>
         <div class="legend" id="leg-pdv"></div>
         <div style="position:relative;width:100%;height:200px"><canvas id="chart-pdv"></canvas></div>
       </div>
@@ -728,8 +728,8 @@
       <div style="position:relative;width:100%;height:280px"><canvas id="chart-origem"></canvas></div>
     </div>
 
-    <!-- Evolução diária -->
-    <p class="section-title">Evolução diária (Linhas)</p>
+    <!-- EvoluÃ§Ã£o diÃ¡ria -->
+    <p class="section-title">EvoluÃ§Ã£o diÃ¡ria (Linhas)</p>
     <div class="card">
       <h3>Receita por dia (R$)</h3>
       <div class="legend" id="leg-ev-receita"></div>
@@ -737,7 +737,7 @@
     </div>
     <div class="grid-2">
       <div class="card">
-        <h3>Taxa de conversão por dia (%)</h3>
+        <h3>Taxa de conversÃ£o por dia (%)</h3>
         <div class="legend" id="leg-ev-conv"></div>
         <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-conv"></canvas></div>
       </div>
@@ -749,38 +749,38 @@
     </div>
     <div class="grid-2">
       <div class="card">
-        <h3>Sessões por dia</h3>
+        <h3>SessÃµes por dia</h3>
         <div class="legend" id="leg-ev-sess"></div>
         <div style="position:relative;width:100%;height:200px"><canvas id="chart-ev-sess"></canvas></div>
       </div>
       <div class="card">
-        <h3>Transações por dia</h3>
+        <h3>TransaÃ§Ãµes por dia</h3>
         <div class="legend" id="leg-ev-trans"></div>
         <div style="position:relative;width:100%;height:200px"><canvas id="chart-ev-trans"></canvas></div>
       </div>
     </div>
 
-    <!-- Comparativo de períodos -->
-    <p class="section-title">Comparativo de períodos</p>
+    <!-- Comparativo de perÃ­odos -->
+    <p class="section-title">Comparativo de perÃ­odos</p>
     <div class="cmp-panel">
       <h3>Configurar comparativo</h3>
 
       <div class="cmp-preset-row">
-        <button class="cmp-btn" data-preset="mom">MoM — Mês anterior</button>
-        <button class="cmp-btn" data-preset="yoy">YoY — Mesmo período ano anterior</button>
+        <button class="cmp-btn" data-preset="mom">MoM â€” MÃªs anterior</button>
+        <button class="cmp-btn" data-preset="yoy">YoY â€” Mesmo perÃ­odo ano anterior</button>
         <button class="cmp-btn" data-preset="lastweek">Semana anterior</button>
         <button class="cmp-btn active" data-preset="custom">Personalizado</button>
       </div>
 
       <div class="cmp-filters">
-        <div class="fg"><label style="color:var(--cmpA)">■ Período A — início</label><input type="date" id="cmp-a-ini"
+        <div class="fg"><label style="color:var(--cmpA)">â–  PerÃ­odo A â€” inÃ­cio</label><input type="date" id="cmp-a-ini"
             value="2026-04-01" /></div>
-        <div class="fg"><label style="color:var(--cmpA)">Período A — fim</label><input type="date" id="cmp-a-fim"
+        <div class="fg"><label style="color:var(--cmpA)">PerÃ­odo A â€” fim</label><input type="date" id="cmp-a-fim"
             value="2026-04-30" /></div>
         <div style="display:flex;align-items:flex-end;padding-bottom:4px;color:var(--text3);font-size:18px">vs</div>
-        <div class="fg"><label style="color:var(--cmpB)">■ Período B — início</label><input type="date" id="cmp-b-ini"
+        <div class="fg"><label style="color:var(--cmpB)">â–  PerÃ­odo B â€” inÃ­cio</label><input type="date" id="cmp-b-ini"
             value="2026-03-01" /></div>
-        <div class="fg"><label style="color:var(--cmpB)">Período B — fim</label><input type="date" id="cmp-b-fim"
+        <div class="fg"><label style="color:var(--cmpB)">PerÃ­odo B â€” fim</label><input type="date" id="cmp-b-fim"
             value="2026-03-31" /></div>
         <div class="fg"><label>PDV</label>
           <select id="cmp-pdv">
@@ -793,29 +793,29 @@
 
       <div class="period-labels">
         <span class="dot" style="background:var(--cmpA)"></span>
-        <span id="cmp-label-a" style="color:var(--cmpA)">Período A</span>
+        <span id="cmp-label-a" style="color:var(--cmpA)">PerÃ­odo A</span>
         <span style="color:var(--text3)">vs</span>
         <span class="dot" style="background:var(--cmpB)"></span>
-        <span id="cmp-label-b" style="color:var(--cmpB)">Período B</span>
+        <span id="cmp-label-b" style="color:var(--cmpB)">PerÃ­odo B</span>
       </div>
 
       <div class="cmp-kpi-grid" id="cmp-kpis"></div>
 
       <div class="grid-2">
         <div class="cmp-card">
-          <div class="cmp-card-title">Receita diária (R$)</div>
+          <div class="cmp-card-title">Receita diÃ¡ria (R$)</div>
           <div class="legend" id="leg-cmp-receita"></div>
           <div style="position:relative;height:200px"><canvas id="chart-cmp-receita"></canvas></div>
         </div>
         <div class="cmp-card">
-          <div class="cmp-card-title">Conversão (%)</div>
+          <div class="cmp-card-title">ConversÃ£o (%)</div>
           <div class="legend" id="leg-cmp-conv"></div>
           <div style="position:relative;height:200px"><canvas id="chart-cmp-conv"></canvas></div>
         </div>
       </div>
       <div class="grid-2" style="margin-top:12px">
         <div class="cmp-card">
-          <div class="cmp-card-title">Sessões diárias</div>
+          <div class="cmp-card-title">SessÃµes diÃ¡rias</div>
           <div class="legend" id="leg-cmp-sess"></div>
           <div style="position:relative;height:200px"><canvas id="chart-cmp-sess"></canvas></div>
         </div>
@@ -827,12 +827,14 @@
       </div>
     </div>
 
-    <div class="footer">Atualizado automaticamente a partir do Google Sheets · Grupo Guanabara</div>
+    <div class="footer">Atualizado automaticamente a partir do Google Sheets Â· Grupo Guanabara</div>
   </div>
 
-  <script>
+    <script>
     const CSV_URL = './dados_dashboard.csv';
-    const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', total: '#a078f0', receita: '#1fd196', conv: '#f0a030', share: '#a060e0', sess: '#4b8ef5', trans: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030', pal: ['#a078f0', '#1fd196', '#4b8ef5', '#f07040', '#f0c040', '#f06090', '#70c040', '#8090a0'] };
+    const GRP_COLORS = { Direct: '#a078f0', CRM: '#1fd196', Paid: '#f07040', Organic: '#f0a030', Referral: '#40f0d0', Blog: '#f040a0', Others: '#4b8ef5' };
+    const palette = ['#e05070', '#e0b040', '#40e0c0', '#9050e0', '#f06090', '#70c040', '#8090a0'];
+    const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030' };
     const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
     const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
     let rawData = [], charts = {};
@@ -844,9 +846,7 @@
     function fmtC(v) { if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; return fmtR(v) }
     function parseNum(s) { if (!s && s !== 0) return 0; s = String(s).trim().replace(/\s/g, ''); if (s.includes('.') && s.includes(',')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (s.includes(',') && !s.includes('.')) { s = s.replace(',', '.'); } return parseFloat(s) || 0 }
     function parseDate(d) { if (!d) return null; const s = String(d).trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) { if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` } } if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; return s }
-    function isCRM(canal) { return String(canal).toUpperCase().startsWith('CRM') }
     function isInsider(r) { return String(r.search_text).toLowerCase().includes('insider') }
-    function delta(a, b) { if (b === 0) return null; return (a - b) / Math.abs(b) * 100 }
     function delta(a, b) { if (b === 0) return null; return (a - b) / Math.abs(b) * 100 }
 
     function getFilteredBase(ini, fim, pdv) {
@@ -882,10 +882,14 @@
     function buildByDate(data) {
       const byDate = {};
       data.forEach(r => {
-        if (!byDate[r.date]) byDate[r.date] = { crm: 0, outros: 0, sesscrm: 0, sessoutros: 0, transcrm: 0, transoutros: 0, origens: {} };
+        if (!byDate[r.date]) byDate[r.date] = { groups: {}, origens: {} };
         const d = byDate[r.date];
-        if (isCRM(r.canal)) { d.crm += r.receita; d.sesscrm += r.sessoes; d.transcrm += r.trans; }
-        else { d.outros += r.receita; d.sessoutros += r.sessoes; d.transoutros += r.trans; }
+        
+        if (!d.groups[r.canal]) d.groups[r.canal] = { rec: 0, sess: 0, trans: 0 };
+        d.groups[r.canal].rec += r.receita;
+        d.groups[r.canal].sess += r.sessoes;
+        d.groups[r.canal].trans += r.trans;
+        
         if (r.midia) {
           if (!d.origens[r.midia]) d.origens[r.midia] = { rec: 0, sess: 0, trans: 0 };
           d.origens[r.midia].rec += r.receita;
@@ -899,14 +903,25 @@
 
     function filterByOrigens(baseData) {
       if (!window.selectedOrigens || window.selectedOrigens.length === 0) return baseData;
-      const incCrm = window.selectedOrigens.includes('CRM_TOTAL');
-      const spec = new Set(window.selectedOrigens.filter(o => o !== 'CRM_TOTAL'));
+      const groups = new Set();
+      const spec = new Set();
+      window.selectedOrigens.forEach(o => {
+         if (o.startsWith('GRP_')) groups.add(o.replace('GRP_', ''));
+         else spec.add(o);
+      });
       
       return baseData.filter(r => {
-        if (incCrm && isCRM(r.canal)) return true;
+        if (groups.has(r.canal)) return true;
         if (spec.has(r.midia)) return true;
         return false;
       });
+    }
+
+    function getActivePlotOrigens() {
+       if (window.selectedOrigens && window.selectedOrigens.length > 0) return window.selectedOrigens;
+       const allGroups = new Set();
+       rawData.forEach(r => allGroups.add(r.canal));
+       return Array.from(allGroups).map(g => 'GRP_' + g);
     }
 
     function updateAll() {
@@ -914,7 +929,7 @@
       window.selectedOrigens = Array.from(document.querySelectorAll('#ms-list input:checked')).map(cb => cb.value);
       const msLabel = document.getElementById('ms-label');
       if (window.selectedOrigens.length === 0) msLabel.textContent = 'Nenhuma selecionada';
-      else if (window.selectedOrigens.length === 1) msLabel.textContent = window.selectedOrigens[0].slice(0, 20) + '...';
+      else if (window.selectedOrigens.length === 1) msLabel.textContent = window.selectedOrigens[0].replace('GRP_','') + '...';
       else msLabel.textContent = window.selectedOrigens.length + ' selecionadas';
 
       const pdv = document.getElementById('f-pdv').value;
@@ -967,7 +982,7 @@
       setKpi('k-share-crm', kpiA.share, v => v.toFixed(2) + '%', 'share', kpiB);
       setKpi('k-sessoes', kpiA.sess, fmt, 'sess', kpiB);
       setKpi('k-trans', kpiA.trans, fmt, 'trans', kpiB);
-      setKpi('k-conv', kpiA.conv, v => v > 0 ? v.toFixed(2) + '%' : '—', 'conv', kpiB);
+      setKpi('k-conv', kpiA.conv, v => v > 0 ? v.toFixed(2) + '%' : 'â€”', 'conv', kpiB);
 
       const calcInsider = (dfilt) => {
         const dIns = dfilt.filter(r => isInsider(r));
@@ -983,34 +998,40 @@
       setKpi('k-conv-insider', insA.conv, v => v.toFixed(2) + '%', 'conv', insB);
       setKpi('k-sess-insider', insA.sess, fmt, 'sess', insB);
       setKpi('k-trans-insider', insA.trans, fmt, 'trans', insB);
-      setKpi('k-ticket', kpiA.tkt, v => v > 0 ? fmtR(v) : '—', 'tkt', kpiB);
+      setKpi('k-ticket', kpiA.tkt, v => v > 0 ? fmtR(v) : 'â€”', 'tkt', kpiB);
 
-      // --- Gráficos Visão Geral ---
+      // --- GrÃ¡ficos VisÃ£o Geral ---
       const { byDate, dates } = buildByDate(data);
-      const palette = ['#a078f0', '#f07040', '#f0a030', '#40f0d0', '#f040a0', '#d040f0'];
       
-      function buildDatasets(dates, byDate, crmFn, outFn, origFn) {
+      function buildDatasets(dates, byDate, measureFn, dash) {
         const ds = [];
-        window.selectedOrigens.forEach((o, i) => {
-          if (o === 'CRM_TOTAL') {
-            ds.push({ label: 'CRM (Total)', data: dates.map(d => crmFn(byDate[d])), borderColor: C.crm, backgroundColor: C.crm + '18', fill: true, tension: .3, pointRadius: 3, borderWidth: 2 });
-          } else if (o === 'OUTROS_TOTAL') {
-            ds.push({ label: 'Outros Canais', data: dates.map(d => outFn(byDate[d])), borderColor: C.outros, backgroundColor: C.outros + '18', fill: true, tension: .3, pointRadius: 3, borderWidth: 2, borderDash: [5, 3] });
+        const plotList = getActivePlotOrigens();
+        plotList.forEach((o, i) => {
+          let label = o;
+          let color = palette[i % palette.length];
+          let dataArr = [];
+          if (o.startsWith('GRP_')) {
+             let g = o.replace('GRP_', '');
+             label = g + ' (Grupo)';
+             color = GRP_COLORS[g] || color;
+             dataArr = dates.map(d => byDate[d] && byDate[d].groups[g] ? Math.round(measureFn(byDate[d].groups[g], d)) : 0);
           } else {
-            ds.push({ label: o, data: dates.map(d => origFn(byDate[d], o)), borderColor: palette[i % palette.length], backgroundColor: 'transparent', tension: .3, pointRadius: 3, borderWidth: 1.5 });
+             dataArr = dates.map(d => byDate[d] && byDate[d].origens[o] ? Math.round(measureFn(byDate[d].origens[o], d)) : 0);
           }
+          ds.push({ label, data: dataArr, borderColor: color, backgroundColor: dash ? 'transparent' : color + '18', fill: !dash, tension: .3, pointRadius: dash ? 0 : 3, borderWidth: 2, borderDash: dash ? [5,3] : [] });
         });
         return ds;
       }
       
       function buildLegend() {
-        const l = [];
-        window.selectedOrigens.forEach((o, i) => {
-           if (o === 'CRM_TOTAL') l.push({ color: C.crm, label: 'CRM (Total)' });
-           else if (o === 'OUTROS_TOTAL') l.push({ color: C.outros, label: 'Outros Canais' });
-           else l.push({ color: palette[i % palette.length], label: o });
+        const plotList = getActivePlotOrigens();
+        return plotList.map((o, i) => {
+          if (o.startsWith('GRP_')) {
+             let g = o.replace('GRP_', '');
+             return { color: GRP_COLORS[g] || palette[i % palette.length], label: g + ' (Grupo)' };
+          }
+          return { color: palette[i % palette.length], label: o };
         });
-        return l;
       }
 
       const oMap = {};
@@ -1021,12 +1042,15 @@
       });
 
       dc('canal'); leg('leg-canal', []); 
-      const selLabels = window.selectedOrigens.map(o => o === 'CRM_TOTAL' ? 'CRM (Total)' : (o === 'OUTROS_TOTAL' ? 'Outros Canais' : o));
-      const selColors = window.selectedOrigens.map((o, i) => o === 'CRM_TOTAL' ? C.crm : (o === 'OUTROS_TOTAL' ? C.outros : palette[i % palette.length]));
-      const selData = window.selectedOrigens.map(o => {
-        if (o === 'CRM_TOTAL') return data.filter(r => isCRM(r.canal)).reduce((a,r) => a+r.receita, 0);
-        if (o === 'OUTROS_TOTAL') return data.filter(r => !isCRM(r.canal)).reduce((a,r) => a+r.receita, 0);
-        return oMap[o] || 0;
+      const plotList = getActivePlotOrigens();
+      const selLabels = plotList.map(o => o.startsWith('GRP_') ? o.replace('GRP_','') + ' (Grupo)' : o);
+      const selColors = plotList.map((o, i) => o.startsWith('GRP_') ? (GRP_COLORS[o.replace('GRP_','')] || palette[i%palette.length]) : palette[i%palette.length]);
+      const selData = plotList.map(o => {
+        if (o.startsWith('GRP_')) {
+           const g = o.replace('GRP_','');
+           return data.filter(r => r.canal === g).reduce((a,r) => a+r.receita, 0);
+        }
+        return data.filter(r => r.midia === o).reduce((a,r) => a+r.receita, 0);
       });
 
       charts['canal'] = new Chart(document.getElementById('chart-canal'), {
@@ -1061,56 +1085,52 @@
       dc('diario'); leg('leg-diario', buildLegend());
       charts['diario'] = new Chart(document.getElementById('chart-diario'), { 
         type: 'line', 
-        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.crm), x => Math.round(x.outros), (x, o) => x.origens[o] ? Math.round(x.origens[o].rec) : 0) }, 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.rec) }, 
         options: lineOpts(v => fmtC(v)) 
       });
 
       dc('ev-receita'); leg('leg-ev-receita', buildLegend());
       charts['ev-receita'] = new Chart(document.getElementById('chart-ev-receita'), { 
         type: 'line', 
-        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.crm), x => Math.round(x.outros), (x, o) => x.origens[o] ? Math.round(x.origens[o].rec) : 0) }, 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.rec) }, 
         options: lineOpts(v => fmtC(v)) 
       });
 
       dc('ev-conv'); leg('leg-ev-conv', buildLegend());
       charts['ev-conv'] = new Chart(document.getElementById('chart-ev-conv'), { 
         type: 'line', 
-        data: { labels: dates, datasets: buildDatasets(dates, byDate, 
-          x => x.sesscrm > 0 ? +(x.transcrm / x.sesscrm * 100).toFixed(2) : 0, 
-          x => x.sessoutros > 0 ? +(x.transoutros / x.sessoutros * 100).toFixed(2) : 0, 
-          (x, o) => (x.origens[o] && x.origens[o].sess > 0) ? +(x.origens[o].trans / x.origens[o].sess * 100).toFixed(2) : 0
-        ) }, 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.sess > 0 ? +(x.trans / x.sess * 100).toFixed(2) : 0) }, 
         options: lineOpts(v => v.toFixed(1) + '%') 
       });
 
       dc('ev-share'); leg('leg-ev-share', buildLegend());
       charts['ev-share'] = new Chart(document.getElementById('chart-ev-share'), { 
         type: 'line', 
-        data: { labels: dates, datasets: buildDatasets(dates, byDate, 
-          x => { const t = x.crm + x.outros; return t > 0 ? +(x.crm / t * 100).toFixed(1) : 0 }, 
-          x => { const t = x.crm + x.outros; return t > 0 ? +(x.outros / t * 100).toFixed(1) : 0 }, 
-          (x, o) => { const t = x.crm + x.outros; return (t > 0 && x.origens[o]) ? +(x.origens[o].rec / t * 100).toFixed(1) : 0 }
-        ) }, 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, (x, d) => {
+            let totDate = 0;
+            if(byDate[d]) Object.values(byDate[d].groups).forEach(g => totDate += g.rec);
+            return totDate > 0 ? +(x.rec / totDate * 100).toFixed(1) : 0;
+        }) }, 
         options: { ...lineOpts(v => v.toFixed(1) + '%'), scales: { x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } }, y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: TICK, font: TF }, grid: { color: GRID } } } } 
       });
 
       dc('ev-sess'); leg('leg-ev-sess', buildLegend());
       charts['ev-sess'] = new Chart(document.getElementById('chart-ev-sess'), { 
         type: 'line', 
-        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.sesscrm), x => Math.round(x.sessoutros), (x, o) => x.origens[o] ? Math.round(x.origens[o].sess) : 0) }, 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.sess) }, 
         options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
       });
 
       dc('ev-trans'); leg('leg-ev-trans', buildLegend());
       charts['ev-trans'] = new Chart(document.getElementById('chart-ev-trans'), { 
         type: 'line', 
-        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.transcrm), x => Math.round(x.transoutros), (x, o) => x.origens[o] ? Math.round(x.origens[o].trans) : 0) }, 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.trans) }, 
         options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
       });
 
     }
 
-    /* ── Comparativo ── */
+    /* â”€â”€ Comparativo â”€â”€ */
     function getPeriodData(ini, fim, pdv) {
       return rawData.filter(r => {
         if (pdv && r.pdv !== pdv) return false;
@@ -1130,9 +1150,9 @@
       const fields = [
         { key: 'receita', label: 'Receita total', fmt: fmtR },
         { key: 'share', label: 'Share %', fmt: v => v.toFixed(1) + '%' },
-        { key: 'sessoes', label: 'Sessões', fmt: fmt },
-        { key: 'trans', label: 'Transações', fmt: fmt },
-        { key: 'conv', label: 'Conversão', fmt: v => v.toFixed(2) + '%' }
+        { key: 'sessoes', label: 'SessÃµes', fmt: fmt },
+        { key: 'trans', label: 'TransaÃ§Ãµes', fmt: fmt },
+        { key: 'conv', label: 'ConversÃ£o', fmt: v => v.toFixed(2) + '%' }
       ];
       document.getElementById('cmp-kpis').innerHTML = fields.map(f => {
         const va = kA[f.key], vb = kB[f.key], d = delta(va, vb);
@@ -1145,15 +1165,26 @@
       const byDateBase = buildByDate(dataBase).byDate;
       return {
         dates,
-        receita: dates.map(d => Math.round(byDate[d].crm + byDate[d].outros)),
-        conv: dates.map(d => { const x = byDate[d]; const s = x.sesscrm + x.sessoutros; return s > 0 ? +((x.transcrm + x.transoutros) / s * 100).toFixed(2) : 0 }),
-        sess: dates.map(d => Math.round(byDate[d].sesscrm + byDate[d].sessoutros)),
+        receita: dates.map(d => {
+           let r = 0; if(byDate[d]) Object.values(byDate[d].groups).forEach(g => r += g.rec);
+           return Math.round(r);
+        }),
+        conv: dates.map(d => { 
+           if(!byDate[d]) return 0;
+           let tr = 0, se = 0;
+           Object.values(byDate[d].groups).forEach(g => { tr += g.trans; se += g.sess; });
+           return se > 0 ? +(tr / se * 100).toFixed(2) : 0;
+        }),
+        sess: dates.map(d => {
+           let r = 0; if(byDate[d]) Object.values(byDate[d].groups).forEach(g => r += g.sess);
+           return Math.round(r);
+        }),
         share: dates.map(d => { 
-          const x = byDate[d]; 
-          const xb = byDateBase[d] || {crm:0, outros:0};
-          const t = x.crm + x.outros;
-          const tb = xb.crm + xb.outros;
-          return tb > 0 ? +(t / tb * 100).toFixed(1) : 0;
+           if(!byDate[d]) return 0;
+           let rec = 0, recBase = 0;
+           Object.values(byDate[d].groups).forEach(g => rec += g.rec);
+           if(byDateBase[d]) Object.values(byDateBase[d].groups).forEach(g => recBase += g.rec);
+           return recBase > 0 ? +(rec / recBase * 100).toFixed(1) : 0;
         })
       };
     }
@@ -1183,7 +1214,7 @@
       charts['cmp-share'] = new Chart(document.getElementById('chart-cmp-share'), { type: 'line', data: { labels, datasets: mkDs('share', 'share') }, options: cmpOpts(v => v.toFixed(1) + '%', { scales: { x: { ticks: { maxTicksLimit: 8, color: TICK, font: TFS }, grid: { display: false } }, y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: TICK, font: TFS }, grid: { color: GRID } } } }) });
     }
 
-    function fmtLabel(ini, fim) { const f = d => d ? d.split('-').reverse().join('/') : '?'; return `${f(ini)} – ${f(fim)}` }
+    function fmtLabel(ini, fim) { const f = d => d ? d.split('-').reverse().join('/') : '?'; return `${f(ini)} â€“ ${f(fim)}` }
 
     function updateComparativo() {
       if (!rawData.length) return;
@@ -1235,7 +1266,7 @@
       document.getElementById('f-inicio').value = '2025-01-01';
       document.getElementById('f-fim').value = '2026-05-17';
       document.querySelectorAll('#ms-list input').forEach(cb => {
-        cb.checked = cb.value === 'CRM_TOTAL';
+        cb.checked = cb.value === 'GRP_CRM';
       });
       document.getElementById('cmp-a-ini').value = '2025-01-01';
       document.getElementById('cmp-a-fim').value = '2026-05-17';
@@ -1243,7 +1274,7 @@
       updateComparativo();
     }
 
-    /* ── Eventos ── */
+    /* â”€â”€ Eventos â”€â”€ */
     ['f-pdv', 'f-cmp'].forEach(id => {
       document.getElementById(id).addEventListener('change', updateAll);
     });
@@ -1273,7 +1304,7 @@
       });
     });
 
-    /* ── Carga inicial ── */
+    /* â”€â”€ Carga inicial â”€â”€ */
     function loadData() {
       document.getElementById('status-txt').textContent = 'Carregando...';
       Papa.parse(CSV_URL, {
@@ -1285,16 +1316,16 @@
             date: findKey(sample, ['Data Ajustada', 'Data ajustada', 'Data']),
             canal: findKey(sample, ['Origem Agrupada', 'Origem agrupada']),
             origem: findKey(sample, ['Origem Resumida', 'Origem resumida']),
-            campanha: findKey(sample, ['Campanha da sessão', 'Campanha', 'Campaign']),
-            midia: findKey(sample, ['Origem / mídia da sessão', 'Origem / midia', 'Source / Medium']),
-            sessoes: findKey(sample, ['SessÃµes', 'Sessões', 'Sessoes', 'Sessions']),
-            trans: findKey(sample, ['Transações', 'Transacoes', 'TransaÃ§Ãµes', 'Transa\u00e7\u00f5es']),
+            campanha: findKey(sample, ['Campanha da sessÃ£o', 'Campanha', 'Campaign']),
+            midia: findKey(sample, ['Origem / mÃ­dia da sessÃ£o', 'Origem / midia', 'Source / Medium']),
+            sessoes: findKey(sample, ['SessÃƒÂµes', 'SessÃµes', 'Sessoes', 'Sessions']),
+            trans: findKey(sample, ['TransaÃ§Ãµes', 'Transacoes', 'TransaÃƒÂ§ÃƒÂµes', 'Transa\u00e7\u00f5es']),
             receita: findKey(sample, ['Receita', 'receita'])
           };
           rawData = res.data.map(r => ({
             pdv: String(r[K.pdv] || '').trim(),
             date: parseDate(r[K.date]),
-            canal: String(r[K.canal] || 'Outros Canais').trim(),
+            canal: String(r[K.canal] || 'Others').trim(),
             origem: String(r[K.origem] || '').trim(),
             midia: String(r[K.midia] || '').trim(),
             search_text: `${r[K.origem] || ''} ${r[K.campanha] || ''} ${r[K.midia] || ''}`.toLowerCase(),
@@ -1303,29 +1334,40 @@
             receita: parseNum(r[K.receita])
           })).filter(r => r.date && r.date.length >= 8);
           const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
-          document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo || '—');
+          document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas Â· Ãºltimo: ' + (ultimo || 'â€”');
 
           // Initialize comparativo dates
           document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
           document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
 
+          const groupsMap = {};
           const origensMap = {};
           rawData.forEach(r => {
+            if (r.canal) {
+               if (!groupsMap[r.canal]) groupsMap[r.canal] = 0;
+               groupsMap[r.canal] += r.receita;
+            }
             if (r.midia) {
-              if (!origensMap[r.midia]) origensMap[r.midia] = { rec: 0, isCRM: isCRM(r.canal) };
+              if (!origensMap[r.midia]) origensMap[r.midia] = { rec: 0 };
               origensMap[r.midia].rec += r.receita;
             }
           });
+          const groupsValidos = Object.keys(groupsMap).sort((a,b) => groupsMap[b] - groupsMap[a]);
           const origensValidas = Object.keys(origensMap).filter(o => origensMap[o].rec > 0).sort((a, b) => origensMap[b].rec - origensMap[a].rec);
+          
           const list = document.getElementById('ms-list');
           if (list) {
             let html = `
               <div style="padding:8px; border-bottom:1px solid var(--border); display:flex; gap:5px; flex-direction:column; position:sticky; top:0; background:var(--bg2); z-index:10;">
-                <button type="button" class="cmp-btn" onclick="document.querySelectorAll('#ms-list input').forEach(cb => cb.checked = false); updateAll();" style="width:100%; border-color:var(--border2);">Limpar Seleção</button>
+                <button type="button" class="cmp-btn" onclick="document.querySelectorAll('#ms-list input').forEach(cb => cb.checked = false); updateAll();" style="width:100%; border-color:var(--border2);">Limpar SeleÃ§Ã£o</button>
                 <button type="button" class="cmp-btn" onclick="document.getElementById('ms-list').classList.remove('open');" style="width:100%; background:var(--accent); color:#000; border-color:var(--accent); font-weight:500;">OK / Fechar</button>
               </div>
             `;
-            html += '<label class="ms-item"><input type="checkbox" value="CRM_TOTAL" onchange="updateAll()" checked><div><div>CRM (Total)</div><div class="ms-summary">Visão consolidada</div></div></label>';
+            groupsValidos.forEach(g => {
+              let checked = g === 'CRM' ? 'checked' : '';
+              html += '<label class="ms-item"><input type="checkbox" value="GRP_' + g + '" onchange="updateAll()" '+checked+'><div><div style="color:'+(GRP_COLORS[g]||'#fff')+';font-weight:bold">' + g + ' (Grupo)</div><div class="ms-summary">Receita: ' + fmtR(groupsMap[g]) + '</div></div></label>';
+            });
+            html += '<div style="margin: 8px 0; border-bottom: 1px solid var(--border)"></div>';
             origensValidas.forEach(o => {
               html += '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(origensMap[o].rec) + '</div></div></label>';
             });
@@ -1341,6 +1383,7 @@
     }
     loadData();
   </script>
+
 </body>
 
 </html>
