@@ -2,8 +2,8 @@ name: "Automacao Dashboard GA4"
 
 on:
   schedule:
-    # Rodar às 06:00 BRT (09:00 UTC) e 14:00 BRT (17:00 UTC)
-    - cron: '0 9,17 * * *'
+    # Rodar às 09:00 BRT (12:00 UTC) e 14:00 BRT (17:00 UTC)
+    - cron: '0 12,17 * * *'
   workflow_dispatch: # Permite rodar o script manualmente clicando em um botão no GitHub
 
 permissions:
