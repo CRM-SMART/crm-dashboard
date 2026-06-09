@@ -1,58 +1,1396 @@
-name: "Automacao Dashboard GA4"
+<!DOCTYPE html>
+<html lang="pt-BR">
 
-on:
-  schedule:
-    # Rodar às 09:00 BRT (12:00 UTC) e 14:00 BRT (17:00 UTC)
-    - cron: '0 12,17 * * *'
-  workflow_dispatch: # Permite rodar o script manualmente clicando em um botão no GitHub
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard CRM — Grupo Guanabara</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+    :root {
+      --bg: #0e0f11;
+      --bg2: #16181c;
+      --bg3: #1e2126;
+      --border: rgba(255, 255, 255, .07);
+      --border2: rgba(255, 255, 255, .12);
+      --text: #f0f0ee;
+      --text2: #8a8e96;
+      --text3: #555960;
+      --crm: #1fd196;
+      --outros: #4b8ef5;
+      --site: #a078f0;
+      --app: #f07040;
+      --accent: #1fd196;
+      --cmpA: #1fd196;
+      --cmpB: #f0a030;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace
+    }
 
-jobs:
-  atualizar_dados_e_publicar:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 4rem
+    }
 
-    steps:
-      - name: Clonar o repositório
-        uses: actions/checkout@v3
+    .header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100
+    }
 
-      - name: Configurar o Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px
+    }
 
-      - name: Instalar dependências
-        run: pip install google-analytics-data
+    .logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      font-size: 14px;
+      color: #0e0f11
+    }
 
-      - name: Criar arquivo de credenciais
-        run: |
-          echo '${{ secrets.GA4_CREDENTIALS }}' > agente-guanabara-16ba36a165a7.json
+    .header-title {
+      font-size: 15px;
+      font-weight: 500
+    }
 
-      - name: Rodar script de atualização
-        run: python update_ga4.py
+    .header-sub {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 1px
+    }
 
-      - name: Commit e Push das alterações
-        run: |
-          git config --global user.name "Robo Dashboard"
-          git config --global user.email "robo@dashboard.com"
-          git add dados_dashboard.csv
-          git diff --quiet && git diff --staged --quiet || git commit -m "⚙️ Auto-update: Extraindo dados atualizados do GA4"
-          git push origin main
+    .status-badge {
+      font-size: 11px;
+      font-family: var(--mono);
+      background: rgba(31, 209, 150, .1);
+      color: var(--accent);
+      border: 1px solid rgba(31, 209, 150, .25);
+      border-radius: 20px;
+      padding: 4px 12px
+    }
 
-      - name: Configurar Pages
-        uses: actions/configure-pages@v4
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 2rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .filter-group label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em
+    }
+
+    .filters select,
+    .filters input[type=date] {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      height: 36px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .15s
+    }
+
+    .filters select:hover,
+    .filters input:hover {
+      border-color: rgba(255, 255, 255, .25)
+    }
+
+    .filters select:focus,
+    .filters input:focus {
+      border-color: var(--accent)
+    }
+
+    .filter-sep {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+      margin: 0 4px
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 1rem
+    }
+
+    .kpi {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s
+    }
+
+    .kpi:hover {
+      border-color: var(--border2)
+    }
+
+    .kpi::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: .6
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 300;
+      color: var(--text);
+      font-family: var(--mono);
+      letter-spacing: -1px
+    }
+
+    .kpi-delta {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+      display: inline-block
+    }
+
+    .kpi-delta.pos {
+      background: rgba(31, 209, 150, .15);
+      color: #1fd196
+    }
+
+    .kpi-delta.neg {
+      background: rgba(240, 112, 64, .15);
+      color: #f07040
+    }
+
+    .kpi-delta.neu {
+      background: rgba(255, 255, 255, .07);
+      color: var(--text2)
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin: 2rem 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border)
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 12px
+    }
+
+    .card h3 {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 12px
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0
+    }
+
+    .multi-select {
+      position: relative
+    }
+
+    .ms-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 7px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 220px;
+      font-size: 12px;
+      font-family: var(--font)
+    }
+
+    .ms-btn:hover {
+      border-color: var(--accent)
+    }
+
+    .ms-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 280px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-top: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, .5);
+      padding: 5px
+    }
+
+    .ms-dropdown.open {
+      display: block
+    }
+
+    .ms-item {
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px
+    }
+
+    .ms-item:hover {
+      background: rgba(255, 255, 255, .05)
+    }
+
+    .ms-item input {
+      cursor: pointer;
+      accent-color: var(--accent)
+    }
+
+    .ms-summary {
+      font-size: 10px;
+      color: var(--text2);
+      display: block;
+      margin-top: 2px
+    }
+
+    /* Comparativo */
+    .cmp-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 12px
+    }
+
+    .cmp-panel>h3 {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 14px
+    }
+
+    .cmp-preset-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px
+    }
+
+    .cmp-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .15s
+    }
+
+    .cmp-btn:hover,
+    .cmp-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(31, 209, 150, .08)
+    }
+
+    .cmp-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 14px
+    }
+
+    .cmp-filters .fg {
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .cmp-filters label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em
+    }
+
+    .cmp-filters input[type=date],
+    .cmp-filters select {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      height: 36px;
+      outline: none;
+      cursor: pointer
+    }
+
+    .cmp-filters input[type=date]:focus,
+    .cmp-filters select:focus {
+      border-color: var(--accent)
+    }
+
+    .period-labels {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 14px;
+      font-family: var(--mono)
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0
+    }
+
+    .cmp-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .cmp-kpi {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .9rem 1rem
+    }
+
+    .cmp-kpi-label {
+      font-size: 10px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px
+    }
+
+    .cmp-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .cmp-val {
+      font-size: 15px;
+      font-weight: 300;
+      font-family: var(--mono)
+    }
+
+    .cmp-val.a {
+      color: var(--cmpA)
+    }
+
+    .cmp-val.b {
+      color: var(--cmpB)
+    }
+
+    .cmp-delta {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 4px
+    }
+
+    .cmp-delta.pos {
+      background: rgba(31, 209, 150, .15);
+      color: #1fd196
+    }
+
+    .cmp-delta.neg {
+      background: rgba(240, 112, 64, .15);
+      color: #f07040
+    }
+
+    .cmp-delta.neu {
+      background: rgba(255, 255, 255, .07);
+      color: var(--text2)
+    }
+
+    .cmp-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem
+    }
+
+    .cmp-card-title {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 10px
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border)
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg)
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 3px
+    }
+
+    @media(max-width:900px) {
+
+      .kpi-grid,
+      .cmp-kpi-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr
+      }
+
+      .page {
+        padding: 1rem
+      }
+
+      .header {
+        padding: 1rem
+      }
+    }
+
+    @media(max-width:600px) {
+
+      .kpi-grid,
+      .cmp-kpi-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">GG</div>
+      <div>
+        <div class="header-title">Dashboard CRM</div>
+        <div class="header-sub">Grupo Guanabara · Sessões &amp; Receita</div>
+      </div>
+    </div>
+    <span class="status-badge" id="status-txt">Carregando...</span>
+  </header>
+
+  <div class="page">
+
+    <!-- Filtros principais -->
+    <div class="filters">
+      <div class="filter-group"><label>Ponto de venda</label>
+        <select id="f-pdv">
+          <option value="">Todos</option>
+          <option value="Site">Site</option>
+          <option value="App">App</option>
+        </select>
+      </div>
+      <div class="filter-group"><label>Comparar com</label>
+        <select id="f-cmp">
+          <option value="none">Sem comparativo</option>
+          <option value="mom">MoM — Mês anterior</option>
+          <option value="yoy">YoY — Ano anterior</option>
+        </select>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group multi-select" id="fg-origens">
+        <label>Origens</label>
+        <div class="ms-btn" onclick="document.getElementById('ms-list').classList.toggle('open')">
+          <span id="ms-label">Nenhuma selecionada</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div class="ms-dropdown" id="ms-list"></div>
+      </div>
+      <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" /></div>
+      <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" /></div>
+      <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
+    </div>
+
+    <!-- KPIs linha 1 -->
+    <p class="section-title">Visão geral — KPIs Globais</p>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label" id="lbl-kpi-rec">Receita Total</div>
+        <div class="kpi-value" id="k-receita-crm">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label" id="lbl-kpi-share">Share %</div>
+        <div class="kpi-value" id="k-share-crm">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sessões</div>
+        <div class="kpi-value" id="k-sessoes">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Transações</div>
+        <div class="kpi-value" id="k-trans">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conversão %</div>
+        <div class="kpi-value" id="k-conv">—</div>
+      </div>
+    </div>
+
+    <!-- KPIs Insider -->
+    <div class="kpi-grid" style="margin-bottom:1.5rem">
+      <div class="kpi">
+        <div class="kpi-label">Receita Insider</div>
+        <div class="kpi-value" id="k-receita-insider">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conversão Insider</div>
+        <div class="kpi-value" id="k-conv-insider">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sessões Insider</div>
+        <div class="kpi-value" id="k-sess-insider">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Transações Insider</div>
+        <div class="kpi-value" id="k-trans-insider">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ticket médio</div>
+        <div class="kpi-value" id="k-ticket">—</div>
+      </div>
+    </div>
+
+    <!-- Visão geral -->
+    <p class="section-title">Visão geral</p>
+    <div class="card">
+      <h3>Receita diária (Área)</h3>
+      <div class="legend" id="leg-diario"></div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-diario"></canvas></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Receita por origem selecionada</h3>
+        <div class="legend" id="leg-canal"></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chart-canal"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Sessões por ponto de venda</h3>
+        <div class="legend" id="leg-pdv"></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chart-pdv"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Top 8 origens por receita</h3>
+      <div style="position:relative;width:100%;height:280px"><canvas id="chart-origem"></canvas></div>
+    </div>
+
+    <!-- Evolução diária -->
+    <p class="section-title">Evolução diária (Linhas)</p>
+    <div class="card">
+      <h3>Receita por dia (R$)</h3>
+      <div class="legend" id="leg-ev-receita"></div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-receita"></canvas></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Taxa de conversão por dia (%)</h3>
+        <div class="legend" id="leg-ev-conv"></div>
+        <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-conv"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 id="lbl-chart-share">Share de receita por dia (%)</h3>
+        <div class="legend" id="leg-ev-share"></div>
+        <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-share"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Sessões por dia</h3>
+        <div class="legend" id="leg-ev-sess"></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chart-ev-sess"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Transações por dia</h3>
+        <div class="legend" id="leg-ev-trans"></div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="chart-ev-trans"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Comparativo de períodos -->
+    <p class="section-title">Comparativo de períodos</p>
+    <div class="cmp-panel">
+      <h3>Configurar comparativo</h3>
+
+      <div class="cmp-preset-row">
+        <button class="cmp-btn" data-preset="mom">MoM — Mês anterior</button>
+        <button class="cmp-btn" data-preset="yoy">YoY — Mesmo período ano anterior</button>
+        <button class="cmp-btn" data-preset="lastweek">Semana anterior</button>
+        <button class="cmp-btn active" data-preset="custom">Personalizado</button>
+      </div>
+
+      <div class="cmp-filters">
+        <div class="fg"><label style="color:var(--cmpA)">■ Período A — início</label><input type="date" id="cmp-a-ini" /></div>
+        <div class="fg"><label style="color:var(--cmpA)">Período A — fim</label><input type="date" id="cmp-a-fim" /></div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:4px;color:var(--text3);font-size:18px">vs</div>
+        <div class="fg"><label style="color:var(--cmpB)">■ Período B — início</label><input type="date" id="cmp-b-ini" /></div>
+        <div class="fg"><label style="color:var(--cmpB)">Período B — fim</label><input type="date" id="cmp-b-fim" /></div>
+        <div class="fg"><label>PDV</label>
+          <select id="cmp-pdv">
+            <option value="">Todos</option>
+            <option value="Site">Site</option>
+            <option value="App">App</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="period-labels">
+        <span class="dot" style="background:var(--cmpA)"></span>
+        <span id="cmp-label-a" style="color:var(--cmpA)">Período A</span>
+        <span style="color:var(--text3)">vs</span>
+        <span class="dot" style="background:var(--cmpB)"></span>
+        <span id="cmp-label-b" style="color:var(--cmpB)">Período B</span>
+      </div>
+
+      <div class="cmp-kpi-grid" id="cmp-kpis"></div>
+
+      <div class="grid-2">
+        <div class="cmp-card">
+          <div class="cmp-card-title">Receita diária (R$)</div>
+          <div class="legend" id="leg-cmp-receita"></div>
+          <div style="position:relative;height:200px"><canvas id="chart-cmp-receita"></canvas></div>
+        </div>
+        <div class="cmp-card">
+          <div class="cmp-card-title">Conversão (%)</div>
+          <div class="legend" id="leg-cmp-conv"></div>
+          <div style="position:relative;height:200px"><canvas id="chart-cmp-conv"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="cmp-card">
+          <div class="cmp-card-title">Sessões diárias</div>
+          <div class="legend" id="leg-cmp-sess"></div>
+          <div style="position:relative;height:200px"><canvas id="chart-cmp-sess"></canvas></div>
+        </div>
+        <div class="cmp-card">
+          <div class="cmp-card-title">Share (%)</div>
+          <div class="legend" id="leg-cmp-share"></div>
+          <div style="position:relative;height:200px"><canvas id="chart-cmp-share"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Atualizado automaticamente a partir do Google Sheets · Grupo Guanabara</div>
+  </div>
+
+  <script>
+    const CSV_URL = './dados_dashboard.csv';
+    const GRP_COLORS = { Direct: '#a078f0', 'Not Set': '#8a8e96', CRM: '#1fd196', Paid: '#f07040', Organic: '#f0a030', Referral: '#40f0d0', Blog: '#f040a0', Others: '#4b8ef5' };
+    const palette = ['#e05070', '#e0b040', '#40e0c0', '#9050e0', '#f06090', '#70c040', '#8090a0'];
+    const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030' };
+    const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
+    const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
+    let rawData = [], charts = {};
+
+    function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '') }
+    function findKey(row, candidates) { const keys = Object.keys(row); for (const c of candidates) { const nc = norm(c); const k = keys.find(k => norm(k) === nc); if (k) return k; } return candidates[0] }
+    function fmt(v) { return Intl.NumberFormat('pt-BR').format(Math.round(v)) }
+    function fmtR(v) { return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v)) }
+    function fmtC(v) { if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; return fmtR(v) }
+    function parseNum(s) { if (!s && s !== 0) return 0; s = String(s).trim().replace(/\s/g, ''); if (s.includes('.') && s.includes(',')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (s.includes(',') && !s.includes('.')) { s = s.replace(',', '.'); } return parseFloat(s) || 0 }
+    function parseDate(d) { if (!d) return null; const s = String(d).trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) { if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` } } if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; return s }
+    function isInsider(r) { return String(r.search_text).toLowerCase().includes('insider') }
+    function delta(a, b) { if (b === 0) return null; return (a - b) / Math.abs(b) * 100 }
+
+    function getFilteredBase(ini, fim, pdv) {
+      return rawData.filter(r => {
+        if (pdv && r.pdv !== pdv) return false;
+        if (ini && r.date < ini) return false;
+        if (fim && r.date > fim) return false;
+        return true;
+      });
+    }
+
+    function getPeriodB_Dates(ini, fim, preset) {
+      if (!preset || preset === 'none') return null;
+      const d1 = new Date(ini), d2 = new Date(fim);
+      let bIni, bFim;
+      if (preset === 'yoy') {
+        const y1 = new Date(d1); y1.setFullYear(y1.getFullYear() - 1);
+        const y2 = new Date(d2); y2.setFullYear(y2.getFullYear() - 1);
+        bIni = y1.toISOString().slice(0, 10); bFim = y2.toISOString().slice(0, 10);
+      } else if (preset === 'mom') {
+        const diff = d2 - d1;
+        const b2 = new Date(d1.getTime() - 864e5);
+        const b1 = new Date(b2.getTime() - diff);
+        bIni = b1.toISOString().slice(0, 10); bFim = b2.toISOString().slice(0, 10);
+      }
+      return { bIni, bFim };
+    }
+
+    function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+    function leg(id, items) { const el = document.getElementById(id); if (!el) return; el.innerHTML = items.map(i => `<span><span class="legend-dot" style="background:${i.color}"></span>${i.label}</span>`).join('') }
+    function lineOpts(yFmt) { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${yFmt ? yFmt(ctx.raw) : ctx.raw}` } } }, scales: { x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } }, y: { ticks: { callback: yFmt || (v => v), color: TICK, font: TF }, grid: { color: GRID } } } } }
+
+    function buildByDate(data) {
+      const byDate = {};
+      data.forEach(r => {
+        if (!byDate[r.date]) byDate[r.date] = { groups: {}, origens: {} };
+        const d = byDate[r.date];
         
-      - name: Subir arquivos para o Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
+        if (!d.groups[r.canal]) d.groups[r.canal] = { rec: 0, sess: 0, trans: 0 };
+        d.groups[r.canal].rec += r.receita;
+        d.groups[r.canal].sess += r.sessoes;
+        d.groups[r.canal].trans += r.trans;
+        
+        if (r.midia) {
+          if (!d.origens[r.midia]) d.origens[r.midia] = { rec: 0, sess: 0, trans: 0 };
+          d.origens[r.midia].rec += r.receita;
+          d.origens[r.midia].sess += r.sessoes;
+          d.origens[r.midia].trans += r.trans;
+        }
+      });
+      const dates = Object.keys(byDate).sort();
+      return { byDate, dates };
+    }
+
+    function filterByOrigens(baseData) {
+      if (!window.selectedOrigens || window.selectedOrigens.length === 0) return baseData;
+      const groups = new Set();
+      const spec = new Set();
+      window.selectedOrigens.forEach(o => {
+         if (o.startsWith('GRP_')) groups.add(o.replace('GRP_', ''));
+         else spec.add(o);
+      });
+      
+      return baseData.filter(r => {
+        if (groups.has(r.canal)) return true;
+        if (spec.has(r.midia)) return true;
+        return false;
+      });
+    }
+
+    function getActivePlotOrigens() {
+       if (window.selectedOrigens && window.selectedOrigens.length > 0) return window.selectedOrigens;
+       const allGroups = new Set();
+       rawData.forEach(r => allGroups.add(r.canal));
+       return Array.from(allGroups).map(g => 'GRP_' + g);
+    }
+
+    function updateAll() {
+      Chart.register(ChartDataLabels);
+      window.selectedOrigens = Array.from(document.querySelectorAll('#ms-list input:checked')).map(cb => cb.value);
+      const msLabel = document.getElementById('ms-label');
+      if (window.selectedOrigens.length === 0) msLabel.textContent = 'Nenhuma selecionada';
+      else if (window.selectedOrigens.length === 1) msLabel.textContent = window.selectedOrigens[0].replace('GRP_','') + '...';
+      else msLabel.textContent = window.selectedOrigens.length + ' selecionadas';
+
+      const pdv = document.getElementById('f-pdv').value;
+      const ini = document.getElementById('f-inicio').value;
+      const fim = document.getElementById('f-fim').value;
+      const cmp = document.getElementById('f-cmp').value;
+
+      const dataBase = getFilteredBase(ini, fim, pdv);
+      const data = filterByOrigens(dataBase);
+
+      const calcKPIs = (dbase, dfilt) => {
+        const totR_base = dbase.reduce((a, r) => a + r.receita, 0);
+        const rec = dfilt.reduce((a, r) => a + r.receita, 0);
+        const sess = dfilt.reduce((a, r) => a + r.sessoes, 0);
+        const trans = dfilt.reduce((a, r) => a + r.trans, 0);
+        const conv = sess > 0 ? trans / sess * 100 : 0;
+        const share = totR_base > 0 ? rec / totR_base * 100 : 0;
+        const tkt = trans > 0 ? rec / trans : 0;
+        return { rec, sess, trans, conv, share, tkt };
+      };
+
+      const kpiA = calcKPIs(dataBase, data);
+      let kpiB = null, dataB = null;
+      if (cmp !== 'none') {
+        const bDates = getPeriodB_Dates(ini, fim, cmp);
+        if (bDates) {
+          const dataBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv);
+          dataB = filterByOrigens(dataBaseB);
+          kpiB = calcKPIs(dataBaseB, dataB);
+        }
+      }
+
+      const setKpi = (id, val, fmtFn, key, kb) => {
+        const el = document.getElementById(id); if (!el) return;
+        let html = fmtFn(val);
+        if (kb && kb[key] !== undefined) {
+          const d = delta(val, kb[key]);
+          if (d !== null) {
+            const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : 'neu';
+            html += `<span class="kpi-delta ${cls}">${d > 0 ? '+' : ''}${d.toFixed(1)}%</span>`;
+          }
+        }
+        el.innerHTML = html;
+      };
+
+      document.getElementById('lbl-kpi-rec').textContent = 'Receita Total';
+      document.getElementById('lbl-kpi-share').textContent = 'Share %';
+
+      setKpi('k-receita-crm', kpiA.rec, fmtR, 'rec', kpiB);
+      setKpi('k-share-crm', kpiA.share, v => v.toFixed(2) + '%', 'share', kpiB);
+      setKpi('k-sessoes', kpiA.sess, fmt, 'sess', kpiB);
+      setKpi('k-trans', kpiA.trans, fmt, 'trans', kpiB);
+      setKpi('k-conv', kpiA.conv, v => v > 0 ? v.toFixed(2) + '%' : '—', 'conv', kpiB);
+
+      const calcInsider = (dfilt) => {
+        const dIns = dfilt.filter(r => isInsider(r));
+        const rec = dIns.reduce((a, r) => a + r.receita, 0);
+        const sess = dIns.reduce((a, r) => a + r.sessoes, 0);
+        const trans = dIns.reduce((a, r) => a + r.trans, 0);
+        const conv = sess > 0 ? trans / sess * 100 : 0;
+        return { rec, sess, trans, conv };
+      };
+      const insA = calcInsider(data);
+      const insB = dataB ? calcInsider(dataB) : null;
+      setKpi('k-receita-insider', insA.rec, fmtR, 'rec', insB);
+      setKpi('k-conv-insider', insA.conv, v => v.toFixed(2) + '%', 'conv', insB);
+      setKpi('k-sess-insider', insA.sess, fmt, 'sess', insB);
+      setKpi('k-trans-insider', insA.trans, fmt, 'trans', insB);
+      setKpi('k-ticket', kpiA.tkt, v => v > 0 ? fmtR(v) : '—', 'tkt', kpiB);
+
+      // --- Gráficos Visão Geral ---
+      const { byDate, dates } = buildByDate(data);
+      
+      function buildDatasets(dates, byDate, measureFn, dash) {
+        const ds = [];
+        const plotList = getActivePlotOrigens();
+        plotList.forEach((o, i) => {
+          let label = o;
+          let color = palette[i % palette.length];
+          let dataArr = [];
+          if (o.startsWith('GRP_')) {
+             let g = o.replace('GRP_', '');
+             label = g + ' (Grupo)';
+             color = GRP_COLORS[g] || color;
+             dataArr = dates.map(d => byDate[d] && byDate[d].groups[g] ? Math.round(measureFn(byDate[d].groups[g], d)) : 0);
+          } else {
+             dataArr = dates.map(d => byDate[d] && byDate[d].origens[o] ? Math.round(measureFn(byDate[d].origens[o], d)) : 0);
+          }
+          ds.push({ label, data: dataArr, borderColor: color, backgroundColor: dash ? 'transparent' : color + '18', fill: !dash, tension: .3, pointRadius: dash ? 0 : 3, borderWidth: 2, borderDash: dash ? [5,3] : [] });
+        });
+        return ds;
+      }
+      
+      function buildLegend() {
+        const plotList = getActivePlotOrigens();
+        return plotList.map((o, i) => {
+          if (o.startsWith('GRP_')) {
+             let g = o.replace('GRP_', '');
+             return { color: GRP_COLORS[g] || palette[i % palette.length], label: g + ' (Grupo)' };
+          }
+          return { color: palette[i % palette.length], label: o };
+        });
+      }
+
+      const oMap = {};
+      const pMap = { 'Site': 0, 'App': 0 };
+      data.forEach(r => {
+        if (r.midia) oMap[r.midia] = (oMap[r.midia] || 0) + r.receita;
+        if (r.pdv) pMap[r.pdv] = (pMap[r.pdv] || 0) + r.sessoes;
+      });
+
+      dc('canal'); leg('leg-canal', []); 
+      const plotList = getActivePlotOrigens();
+      const selLabels = plotList.map(o => o.startsWith('GRP_') ? o.replace('GRP_','') + ' (Grupo)' : o);
+      const selColors = plotList.map((o, i) => o.startsWith('GRP_') ? (GRP_COLORS[o.replace('GRP_','')] || palette[i%palette.length]) : palette[i%palette.length]);
+      const selData = plotList.map(o => {
+        if (o.startsWith('GRP_')) {
+           const g = o.replace('GRP_','');
+           return data.filter(r => r.canal === g).reduce((a,r) => a+r.receita, 0);
+        }
+        return data.filter(r => r.midia === o).reduce((a,r) => a+r.receita, 0);
+      });
+
+      charts['canal'] = new Chart(document.getElementById('chart-canal'), {
+        type: 'bar',
+        data: { labels: selLabels, datasets: [{ data: selData, backgroundColor: selColors, borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, datalabels: { color: '#f0f0ee', font: TFS, formatter: v => v > 0 ? fmtC(v) : '', anchor: 'end', align: 'top' } },
+          scales: { x: { ticks: { color: TICK, font: TFS }, grid: { display: false } }, y: { display: false, min: 0 } }
+        }
+      });
+
+      dc('pdv'); leg('leg-pdv', [{color: C.site, label: 'Site'}, {color: C.app, label: 'App'}]);
+      charts['pdv'] = new Chart(document.getElementById('chart-pdv'), {
+        type: 'doughnut',
+        data: { labels: ['Site', 'App'], datasets: [{ data: [pMap['Site'], pMap['App']], backgroundColor: [C.site, C.app], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
+      });
+
+      const topOrigens = Object.keys(oMap).sort((a,b) => oMap[b] - oMap[a]).slice(0, 8);
+      dc('origem');
+      charts['origem'] = new Chart(document.getElementById('chart-origem'), {
+        type: 'bar',
+        data: { labels: topOrigens, datasets: [{ data: topOrigens.map(o => oMap[o]), backgroundColor: topOrigens.map((_, i) => palette[i % palette.length]), borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          plugins: { legend: { display: false }, datalabels: { color: '#f0f0ee', font: TFS, formatter: v => v > 0 ? fmtC(v) : '', anchor: 'end', align: 'right' } },
+          scales: { x: { display: false, min: 0 }, y: { ticks: { color: TICK, font: TFS }, grid: { display: false } } }
+        }
+      });
+
+      dc('diario'); leg('leg-diario', buildLegend());
+      charts['diario'] = new Chart(document.getElementById('chart-diario'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.rec) }, 
+        options: lineOpts(v => fmtC(v)) 
+      });
+
+      dc('ev-receita'); leg('leg-ev-receita', buildLegend());
+      charts['ev-receita'] = new Chart(document.getElementById('chart-ev-receita'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.rec) }, 
+        options: lineOpts(v => fmtC(v)) 
+      });
+
+      dc('ev-conv'); leg('leg-ev-conv', buildLegend());
+      charts['ev-conv'] = new Chart(document.getElementById('chart-ev-conv'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.sess > 0 ? +(x.trans / x.sess * 100).toFixed(2) : 0) }, 
+        options: lineOpts(v => v.toFixed(1) + '%') 
+      });
+
+      dc('ev-share'); leg('leg-ev-share', buildLegend());
+      charts['ev-share'] = new Chart(document.getElementById('chart-ev-share'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, (x, d) => {
+            let totDate = 0;
+            if(byDate[d]) Object.values(byDate[d].groups).forEach(g => totDate += g.rec);
+            return totDate > 0 ? +(x.rec / totDate * 100).toFixed(1) : 0;
+        }) }, 
+        options: { ...lineOpts(v => v.toFixed(1) + '%'), scales: { x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } }, y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: TICK, font: TF }, grid: { color: GRID } } } } 
+      });
+
+      dc('ev-sess'); leg('leg-ev-sess', buildLegend());
+      charts['ev-sess'] = new Chart(document.getElementById('chart-ev-sess'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.sess) }, 
+        options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
+      });
+
+      dc('ev-trans'); leg('leg-ev-trans', buildLegend());
+      charts['ev-trans'] = new Chart(document.getElementById('chart-ev-trans'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => x.trans) }, 
+        options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
+      });
+
+    }
+
+    /* ── Comparativo ── */
+    function getPeriodData(ini, fim, pdv) {
+      return rawData.filter(r => {
+        if (pdv && r.pdv !== pdv) return false;
+        if (ini && r.date < ini) return false;
+        if (fim && r.date > fim) return false;
+        return true;
+      });
+    }
+    function periodKPIs(dfilt, dbase) {
+      const totR_base = dbase.reduce((a, r) => a + r.receita, 0);
+      const totR = dfilt.reduce((a, r) => a + r.receita, 0);
+      const totS = dfilt.reduce((a, r) => a + r.sessoes, 0);
+      const totT = dfilt.reduce((a, r) => a + r.trans, 0);
+      return { receita: totR, sessoes: totS, trans: totT, conv: totS > 0 ? totT / totS * 100 : 0, share: totR_base > 0 ? totR / totR_base * 100 : 0, ticket: totT > 0 ? totR / totT : 0 };
+    }
+    function renderCmpKPIs(kA, kB) {
+      const fields = [
+        { key: 'receita', label: 'Receita total', fmt: fmtR },
+        { key: 'share', label: 'Share %', fmt: v => v.toFixed(1) + '%' },
+        { key: 'sessoes', label: 'Sessões', fmt: fmt },
+        { key: 'trans', label: 'Transações', fmt: fmt },
+        { key: 'conv', label: 'Conversão', fmt: v => v.toFixed(2) + '%' }
+      ];
+      document.getElementById('cmp-kpis').innerHTML = fields.map(f => {
+        const va = kA[f.key], vb = kB[f.key], d = delta(va, vb);
+        const dHtml = d !== null ? `<span class="cmp-delta ${d > 0 ? 'pos' : d < 0 ? 'neg' : 'neu'}">${d > 0 ? '+' : ''}${d.toFixed(1)}%</span>` : '';
+        return `<div class="cmp-kpi"><div class="cmp-kpi-label">${f.label}</div><div class="cmp-row"><span class="cmp-val a">${f.fmt(va)}</span><span class="cmp-val b">${f.fmt(vb)}</span>${dHtml}</div></div>`;
+      }).join('');
+    }
+    function buildCmpSeries(data, dataBase) {
+      const { byDate, dates } = buildByDate(data);
+      const byDateBase = buildByDate(dataBase).byDate;
+      return {
+        dates,
+        receita: dates.map(d => {
+           let r = 0; if(byDate[d]) Object.values(byDate[d].groups).forEach(g => r += g.rec);
+           return Math.round(r);
+        }),
+        conv: dates.map(d => { 
+           if(!byDate[d]) return 0;
+           let tr = 0, se = 0;
+           Object.values(byDate[d].groups).forEach(g => { tr += g.trans; se += g.sess; });
+           return se > 0 ? +(tr / se * 100).toFixed(2) : 0;
+        }),
+        sess: dates.map(d => {
+           let r = 0; if(byDate[d]) Object.values(byDate[d].groups).forEach(g => r += g.sess);
+           return Math.round(r);
+        }),
+        share: dates.map(d => { 
+           if(!byDate[d]) return 0;
+           let rec = 0, recBase = 0;
+           Object.values(byDate[d].groups).forEach(g => rec += g.rec);
+           if(byDateBase[d]) Object.values(byDateBase[d].groups).forEach(g => recBase += g.rec);
+           return recBase > 0 ? +(rec / recBase * 100).toFixed(1) : 0;
+        })
+      };
+    }
+    function cmpOpts(yFmt, extra) {
+      const base = { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${yFmt ? yFmt(ctx.raw) : ctx.raw}` } } }, scales: { x: { ticks: { maxTicksLimit: 8, color: TICK, font: TFS }, grid: { display: false } }, y: { ticks: { callback: yFmt || (v => v), color: TICK, font: TFS }, grid: { color: GRID } } } };
+      return extra ? { ...base, ...extra, scales: { ...base.scales, ...(extra.scales || {}) } } : base;
+    }
+    function renderCmpCharts(sA, sB, lA, lB) {
+      const maxLen = Math.max(sA.dates.length, sB.dates.length);
+      const labels = Array.from({ length: maxLen }, (_, i) => `Dia ${i + 1}`);
+      const mkDs = (kA, kB) => [
+        { label: lA, data: sA[kA], borderColor: C.cmpA, backgroundColor: 'transparent', tension: .3, pointRadius: 0, borderWidth: 2 },
+        { label: lB, data: sB[kB], borderColor: C.cmpB, backgroundColor: 'transparent', tension: .3, pointRadius: 0, borderWidth: 2, borderDash: [5, 3] }
+      ];
+      leg('leg-cmp-receita', [{ color: C.cmpA, label: lA }, { color: C.cmpB, label: lB }]);
+      leg('leg-cmp-conv', [{ color: C.cmpA, label: lA }, { color: C.cmpB, label: lB }]);
+      leg('leg-cmp-sess', [{ color: C.cmpA, label: lA }, { color: C.cmpB, label: lB }]);
+      leg('leg-cmp-share', [{ color: C.cmpA, label: lA }, { color: C.cmpB, label: lB }]);
+
+      dc('cmp-receita');
+      charts['cmp-receita'] = new Chart(document.getElementById('chart-cmp-receita'), { type: 'line', data: { labels, datasets: mkDs('receita', 'receita') }, options: cmpOpts(v => fmtC(v)) });
+      dc('cmp-conv');
+      charts['cmp-conv'] = new Chart(document.getElementById('chart-cmp-conv'), { type: 'line', data: { labels, datasets: mkDs('conv', 'conv') }, options: cmpOpts(v => v.toFixed(2) + '%') });
+      dc('cmp-sess');
+      charts['cmp-sess'] = new Chart(document.getElementById('chart-cmp-sess'), { type: 'line', data: { labels, datasets: mkDs('sess', 'sess') }, options: cmpOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) });
+      dc('cmp-share');
+      charts['cmp-share'] = new Chart(document.getElementById('chart-cmp-share'), { type: 'line', data: { labels, datasets: mkDs('share', 'share') }, options: cmpOpts(v => v.toFixed(1) + '%', { scales: { x: { ticks: { maxTicksLimit: 8, color: TICK, font: TFS }, grid: { display: false } }, y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: TICK, font: TFS }, grid: { color: GRID } } } }) });
+    }
+
+    function fmtLabel(ini, fim) { const f = d => d ? d.split('-').reverse().join('/') : '?'; return `${f(ini)} – ${f(fim)}` }
+
+    function updateComparativo() {
+      if (!rawData.length) return;
+      const aIni = document.getElementById('cmp-a-ini').value;
+      const aFim = document.getElementById('cmp-a-fim').value;
+      const bIni = document.getElementById('cmp-b-ini').value;
+      const bFim = document.getElementById('cmp-b-fim').value;
+      const pdv = document.getElementById('cmp-pdv').value;
+      const lA = fmtLabel(aIni, aFim), lB = fmtLabel(bIni, bFim);
+      document.getElementById('cmp-label-a').textContent = lA;
+      document.getElementById('cmp-label-b').textContent = lB;
+      const dA_base = getPeriodData(aIni, aFim, pdv);
+      const dB_base = getPeriodData(bIni, bFim, pdv);
+      const dA = filterByOrigens(dA_base);
+      const dB = filterByOrigens(dB_base);
+      renderCmpKPIs(periodKPIs(dA, dA_base), periodKPIs(dB, dB_base));
+      renderCmpCharts(buildCmpSeries(dA, dA_base), buildCmpSeries(dB, dB_base), lA, lB);
+    }
+
+    function applyPreset(preset) {
+      const aIni = document.getElementById('f-inicio').value || '2025-01-01';
+      const aFim = document.getElementById('f-fim').value || '2026-05-17';
+      const d1 = new Date(aIni), d2 = new Date(aFim);
+      let bIni, bFim;
+      if (preset === 'yoy') {
+        const y1 = new Date(d1); y1.setFullYear(y1.getFullYear() - 1);
+        const y2 = new Date(d2); y2.setFullYear(y2.getFullYear() - 1);
+        bIni = y1.toISOString().slice(0, 10); bFim = y2.toISOString().slice(0, 10);
+      } else if (preset === 'mom') {
+        const diff = d2 - d1;
+        const b2 = new Date(d1.getTime() - 864e5);
+        const b1 = new Date(b2.getTime() - diff);
+        bIni = b1.toISOString().slice(0, 10); bFim = b2.toISOString().slice(0, 10);
+      } else if (preset === 'lastweek') {
+        const b2 = new Date(d1.getTime() - 864e5);
+        const b1 = new Date(b2.getTime() - 7 * 864e5);
+        bIni = b1.toISOString().slice(0, 10); bFim = b2.toISOString().slice(0, 10);
+      } else { return; }
+      document.getElementById('cmp-a-ini').value = aIni;
+      document.getElementById('cmp-a-fim').value = aFim;
+      document.getElementById('cmp-b-ini').value = bIni;
+      document.getElementById('cmp-b-fim').value = bFim;
+      updateComparativo();
+    }
+
+    function resetFilters(initialLoad = false) {
+      document.getElementById('f-pdv').value = '';
+      document.getElementById('f-cmp').value = 'none';
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const fmt = d => {
+        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${da}`;
+      };
+      const strFim = fmt(today);
+      const strIni = fmt(firstDay);
+      document.getElementById('f-inicio').value = strIni;
+      document.getElementById('f-fim').value = strFim;
+      document.querySelectorAll('#ms-list input').forEach(cb => {
+        cb.checked = cb.value === 'GRP_CRM';
+      });
+      document.getElementById('cmp-a-ini').value = strIni;
+      document.getElementById('cmp-a-fim').value = strFim;
+      
+      if (!initialLoad) {
+        updateAll();
+        updateComparativo();
+      }
+    }
+
+    /* ── Eventos ── */
+    ['f-pdv', 'f-cmp'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateAll);
+    });
+
+    ['f-inicio', 'f-fim'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
+        document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+        const activeBtn = document.querySelector('.cmp-btn.active');
+        if (activeBtn && activeBtn.dataset.preset !== 'custom') {
+          applyPreset(activeBtn.dataset.preset);
+        } else {
+          updateComparativo();
+        }
+        updateAll();
+      });
+    });
+
+    ['cmp-a-ini', 'cmp-a-fim', 'cmp-b-ini', 'cmp-b-fim', 'cmp-pdv'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateComparativo);
+    });
+    document.querySelectorAll('.cmp-btn[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cmp-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyPreset(btn.dataset.preset);
+      });
+    });
+
+    /* ── Carga inicial ── */
+    function loadData() {
+      document.getElementById('status-txt').textContent = 'Carregando...';
+      Papa.parse(CSV_URL, {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function (res) {
+          const sample = res.data[0] || {};
+          const K = {
+            pdv: findKey(sample, ['Ponto de Venda', 'Ponto de venda']),
+            date: findKey(sample, ['Data Ajustada', 'Data ajustada', 'Data']),
+            canal: findKey(sample, ['Origem Agrupada', 'Origem agrupada']),
+            origem: findKey(sample, ['Origem Resumida', 'Origem resumida']),
+            campanha: findKey(sample, ['Campanha da sessão', 'Campanha', 'Campaign']),
+            midia: findKey(sample, ['Origem / mídia da sessão', 'Origem / midia', 'Source / Medium']),
+            sessoes: findKey(sample, ['Sessões', 'Sessões', 'Sessoes', 'Sessions']),
+            trans: findKey(sample, ['Transações', 'Transacoes', 'Transações', 'Transações']),
+            receita: findKey(sample, ['Receita', 'receita'])
+          };
+          rawData = res.data.map(r => ({
+            pdv: String(r[K.pdv] || '').trim(),
+            date: parseDate(r[K.date]),
+            canal: String(r[K.canal] || 'Others').trim(),
+            origem: String(r[K.origem] || '').trim(),
+            midia: String(r[K.midia] || '').trim(),
+            search_text: `${r[K.origem] || ''} ${r[K.campanha] || ''} ${r[K.midia] || ''}`.toLowerCase(),
+            sessoes: parseNum(r[K.sessoes]),
+            trans: parseNum(r[K.trans]),
+            receita: parseNum(r[K.receita])
+          })).filter(r => r.date && r.date.length >= 8);
+          const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
+          document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo || '—');
+
+          // Initialize comparativo dates
+          document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
+          document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+
+          const groupsMap = {};
+          const origensMap = {};
+          rawData.forEach(r => {
+            if (r.canal) {
+               if (!groupsMap[r.canal]) groupsMap[r.canal] = 0;
+               groupsMap[r.canal] += r.receita;
+            }
+            if (r.midia) {
+              if (!origensMap[r.midia]) origensMap[r.midia] = { rec: 0 };
+              origensMap[r.midia].rec += r.receita;
+            }
+          });
+          const groupsValidos = Object.keys(groupsMap).sort((a,b) => groupsMap[b] - groupsMap[a]);
+          const origensValidas = Object.keys(origensMap).filter(o => origensMap[o].rec > 0).sort((a, b) => origensMap[b].rec - origensMap[a].rec);
           
-      - name: Publicar no GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          const list = document.getElementById('ms-list');
+          if (list) {
+            let html = `
+              <div style="padding:8px; border-bottom:1px solid var(--border); display:flex; gap:5px; flex-direction:column; position:sticky; top:0; background:var(--bg2); z-index:10;">
+                <button type="button" class="cmp-btn" onclick="document.querySelectorAll('#ms-list input').forEach(cb => cb.checked = false); updateAll();" style="width:100%; border-color:var(--border2);">Limpar Seleção</button>
+                <button type="button" class="cmp-btn" onclick="document.getElementById('ms-list').classList.remove('open');" style="width:100%; background:var(--accent); color:#000; border-color:var(--accent); font-weight:500;">OK / Fechar</button>
+              </div>
+            `;
+            groupsValidos.forEach(g => {
+              let checked = g === 'CRM' ? 'checked' : '';
+              html += '<label class="ms-item"><input type="checkbox" value="GRP_' + g + '" onchange="updateAll()" '+checked+'><div><div style="color:'+(GRP_COLORS[g]||'#fff')+';font-weight:bold">' + g + ' (Grupo)</div><div class="ms-summary">Receita: ' + fmtR(groupsMap[g]) + '</div></div></label>';
+            });
+            html += '<div style="margin: 8px 0; border-bottom: 1px solid var(--border)"></div>';
+            origensValidas.forEach(o => {
+              html += '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(origensMap[o].rec) + '</div></div></label>';
+            });
+            list.innerHTML = html;
+          }
+          document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
+
+          updateAll();
+          updateComparativo();
+        },
+        error: () => { document.getElementById('status-txt').textContent = 'Erro ao carregar dados'; }
+      });
+    }
+    resetFilters(true);
+    loadData();
+  </script>
+</body>
+
+</html>
