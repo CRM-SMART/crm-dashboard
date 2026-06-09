@@ -650,8 +650,8 @@
         </div>
         <div class="ms-dropdown" id="ms-list"></div>
       </div>
-      <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2025-01-01" /></div>
-      <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17" /></div>
+      <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" /></div>
+      <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" /></div>
       <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
     </div>
 
@@ -773,15 +773,11 @@
       </div>
 
       <div class="cmp-filters">
-        <div class="fg"><label style="color:var(--cmpA)">■ Período A — início</label><input type="date" id="cmp-a-ini"
-            value="2026-04-01" /></div>
-        <div class="fg"><label style="color:var(--cmpA)">Período A — fim</label><input type="date" id="cmp-a-fim"
-            value="2026-04-30" /></div>
+        <div class="fg"><label style="color:var(--cmpA)">■ Período A — início</label><input type="date" id="cmp-a-ini" /></div>
+        <div class="fg"><label style="color:var(--cmpA)">Período A — fim</label><input type="date" id="cmp-a-fim" /></div>
         <div style="display:flex;align-items:flex-end;padding-bottom:4px;color:var(--text3);font-size:18px">vs</div>
-        <div class="fg"><label style="color:var(--cmpB)">■ Período B — início</label><input type="date" id="cmp-b-ini"
-            value="2026-03-01" /></div>
-        <div class="fg"><label style="color:var(--cmpB)">Período B — fim</label><input type="date" id="cmp-b-fim"
-            value="2026-03-31" /></div>
+        <div class="fg"><label style="color:var(--cmpB)">■ Período B — início</label><input type="date" id="cmp-b-ini" /></div>
+        <div class="fg"><label style="color:var(--cmpB)">Período B — fim</label><input type="date" id="cmp-b-fim" /></div>
         <div class="fg"><label>PDV</label>
           <select id="cmp-pdv">
             <option value="">Todos</option>
@@ -863,14 +859,20 @@
       const d1 = new Date(ini), d2 = new Date(fim);
       let bIni, bFim;
       if (preset === 'yoy') {
-        const y1 = new Date(d1); y1.setFullYear(y1.getFullYear() - 1);
-        const y2 = new Date(d2); y2.setFullYear(y2.getFullYear() - 1);
+        const y1 = new Date(d1); y1.setUTCFullYear(y1.getUTCFullYear() - 1);
+        const y2 = new Date(d2); y2.setUTCFullYear(y2.getUTCFullYear() - 1);
         bIni = y1.toISOString().slice(0, 10); bFim = y2.toISOString().slice(0, 10);
       } else if (preset === 'mom') {
-        const diff = d2 - d1;
-        const b2 = new Date(d1.getTime() - 864e5);
-        const b1 = new Date(b2.getTime() - diff);
-        bIni = b1.toISOString().slice(0, 10); bFim = b2.toISOString().slice(0, 10);
+        const subMonth = d => {
+          const date = new Date(d);
+          const day = date.getUTCDate();
+          date.setUTCMonth(date.getUTCMonth() - 1);
+          if (date.getUTCDate() !== day) date.setUTCDate(0);
+          return date;
+        };
+        const m1 = subMonth(d1);
+        const m2 = subMonth(d2);
+        bIni = m1.toISOString().slice(0, 10); bFim = m2.toISOString().slice(0, 10);
       }
       return { bIni, bFim };
     }
@@ -1235,22 +1237,28 @@
     }
 
     function applyPreset(preset) {
-      const aIni = document.getElementById('f-inicio').value || '2025-01-01';
-      const aFim = document.getElementById('f-fim').value || '2026-05-17';
+      const aIni = document.getElementById('cmp-a-ini').value || document.getElementById('f-inicio').value;
+      const aFim = document.getElementById('cmp-a-fim').value || document.getElementById('f-fim').value;
       const d1 = new Date(aIni), d2 = new Date(aFim);
       let bIni, bFim;
       if (preset === 'yoy') {
-        const y1 = new Date(d1); y1.setFullYear(y1.getFullYear() - 1);
-        const y2 = new Date(d2); y2.setFullYear(y2.getFullYear() - 1);
+        const y1 = new Date(d1); y1.setUTCFullYear(y1.getUTCFullYear() - 1);
+        const y2 = new Date(d2); y2.setUTCFullYear(y2.getUTCFullYear() - 1);
         bIni = y1.toISOString().slice(0, 10); bFim = y2.toISOString().slice(0, 10);
       } else if (preset === 'mom') {
-        const diff = d2 - d1;
-        const b2 = new Date(d1.getTime() - 864e5);
-        const b1 = new Date(b2.getTime() - diff);
-        bIni = b1.toISOString().slice(0, 10); bFim = b2.toISOString().slice(0, 10);
+        const subMonth = d => {
+          const date = new Date(d);
+          const day = date.getUTCDate();
+          date.setUTCMonth(date.getUTCMonth() - 1);
+          if (date.getUTCDate() !== day) date.setUTCDate(0);
+          return date;
+        };
+        const m1 = subMonth(d1);
+        const m2 = subMonth(d2);
+        bIni = m1.toISOString().slice(0, 10); bFim = m2.toISOString().slice(0, 10);
       } else if (preset === 'lastweek') {
-        const b2 = new Date(d1.getTime() - 864e5);
-        const b1 = new Date(b2.getTime() - 7 * 864e5);
+        const b2 = new Date(d1); b2.setUTCDate(b2.getUTCDate() - 1);
+        const b1 = new Date(d1); b1.setUTCDate(b1.getUTCDate() - 8);
         bIni = b1.toISOString().slice(0, 10); bFim = b2.toISOString().slice(0, 10);
       } else { return; }
       document.getElementById('cmp-a-ini').value = aIni;
@@ -1260,18 +1268,28 @@
       updateComparativo();
     }
 
-    function resetFilters() {
+    function resetFilters(initialLoad = false) {
       document.getElementById('f-pdv').value = '';
       document.getElementById('f-cmp').value = 'none';
-      document.getElementById('f-inicio').value = '2025-01-01';
-      document.getElementById('f-fim').value = '2026-05-17';
+      const today = new Date();
+      const fmt = d => {
+        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${da}`;
+      };
+      const strFim = fmt(today);
+      const strIni = fmt(today);
+      document.getElementById('f-inicio').value = strIni;
+      document.getElementById('f-fim').value = strFim;
       document.querySelectorAll('#ms-list input').forEach(cb => {
         cb.checked = cb.value === 'GRP_CRM';
       });
-      document.getElementById('cmp-a-ini').value = '2025-01-01';
-      document.getElementById('cmp-a-fim').value = '2026-05-17';
-      updateAll();
-      updateComparativo();
+      document.getElementById('cmp-a-ini').value = strIni;
+      document.getElementById('cmp-a-fim').value = strFim;
+      
+      if (!initialLoad) {
+        updateAll();
+        updateComparativo();
+      }
     }
 
     /* ── Eventos ── */
@@ -1381,6 +1399,7 @@
         error: () => { document.getElementById('status-txt').textContent = 'Erro ao carregar dados'; }
       });
     }
+    resetFilters(true);
     loadData();
   </script>
 </body>
