@@ -655,8 +655,8 @@
   </header>
 
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('visao-geral')">Visão Geral</button>
-    <button class="tab-btn" onclick="switchTab('analise-crm')">Análise CRM</button>
+    <button class="tab-btn active" onclick="switchTab('visao-geral', this)">Visão Geral</button>
+    <button class="tab-btn" onclick="switchTab('analise-crm', this)">Análise CRM</button>
   </div>
 
   <div class="page">
@@ -862,8 +862,9 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- New CRM tab content -->
+  <!-- New CRM tab content -->
     <div id="tab-analise-crm" class="tab-content">
       <!-- KPIs CRM -->
       <p class="section-title">KPIs Exclusivos CRM</p>
@@ -962,19 +963,25 @@
     const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030' };
     const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
     const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
-    let rawData = [], charts = {};
+    let rawData = [], charts = {}, maxDate = '';
 
     function isCRM(canal) { return String(canal).toUpperCase().startsWith('CRM') }
     function isAutomated(r) {
       const txt = String(r.search_text || '').toLowerCase();
       return txt.includes('architect') || txt.includes('architecht');
     }
-    function switchTab(tabId) {
+    function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
       
       document.getElementById('tab-' + tabId).classList.add('active');
-      event.currentTarget.classList.add('active');
+      if (btn) {
+        btn.classList.add('active');
+      } else {
+        const btns = document.querySelectorAll('.tab-btn');
+        if (tabId === 'visao-geral' && btns[0]) btns[0].classList.add('active');
+        if (tabId === 'analise-crm' && btns[1]) btns[1].classList.add('active');
+      }
       
       updateAll();
     }
@@ -1584,17 +1591,23 @@
     function resetFilters(initialLoad = false) {
       document.getElementById('f-pdv').value = '';
       document.getElementById('f-cmp').value = 'none';
-      const today = new Date();
-      const fmt = d => {
-        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
-        return `${y}-${m}-${da}`;
-      };
-      const strFim = fmt(today);
-      const strIni = fmt(today);
+      let defaultDateStr = '';
+      if (maxDate) {
+        defaultDateStr = maxDate;
+      } else {
+        const today = new Date();
+        const fmt = d => {
+          const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
+          return `${y}-${m}-${da}`;
+        };
+        defaultDateStr = fmt(today);
+      }
+      const strFim = defaultDateStr;
+      const strIni = defaultDateStr;
       document.getElementById('f-inicio').value = strIni;
       document.getElementById('f-fim').value = strFim;
       document.querySelectorAll('#ms-list input').forEach(cb => {
-        cb.checked = cb.value === 'GRP_CRM';
+        cb.checked = false;
       });
       document.getElementById('cmp-a-ini').value = strIni;
       document.getElementById('cmp-a-fim').value = strFim;
@@ -1665,11 +1678,22 @@
             receita: parseNum(r[K.receita])
           })).filter(r => r.date && r.date.length >= 8);
           const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
+          maxDate = ultimo;
           document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo || '—');
 
-          // Initialize comparativo dates
-          document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
-          document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+          // Fallback if the default loaded date range has no data
+          const currentVal = document.getElementById('f-inicio').value;
+          const hasData = rawData.some(r => r.date === currentVal);
+          if (!hasData && maxDate) {
+            document.getElementById('f-inicio').value = maxDate;
+            document.getElementById('f-fim').value = maxDate;
+            document.getElementById('cmp-a-ini').value = maxDate;
+            document.getElementById('cmp-a-fim').value = maxDate;
+          } else {
+            // Initialize comparativo dates
+            document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
+            document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+          }
 
           const groupsMap = {};
           const origensMap = {};
@@ -1695,7 +1719,7 @@
               </div>
             `;
             groupsValidos.forEach(g => {
-              let checked = g === 'CRM' ? 'checked' : '';
+              let checked = '';
               html += '<label class="ms-item"><input type="checkbox" value="GRP_' + g + '" onchange="updateAll()" '+checked+'><div><div style="color:'+(GRP_COLORS[g]||'#fff')+';font-weight:bold">' + g + ' (Grupo)</div><div class="ms-summary">Receita: ' + fmtR(groupsMap[g]) + '</div></div></label>';
             });
             html += '<div style="margin: 8px 0; border-bottom: 1px solid var(--border)"></div>';
