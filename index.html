@@ -623,6 +623,8 @@
       border-radius: var(--radius);
       cursor: pointer;
       transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
     }
     .tab-btn:hover {
       border-color: var(--border2);
@@ -632,12 +634,6 @@
       background: rgba(31, 209, 150, 0.08);
       border-color: var(--accent);
       color: var(--accent);
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
     }
   </style>
 </head>
@@ -655,8 +651,8 @@
   </header>
 
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('visao-geral', this)">Visão Geral</button>
-    <button class="tab-btn" onclick="switchTab('analise-crm', this)">Análise CRM</button>
+    <a href="dashboard_receita.html" class="tab-btn active">Visão Geral</a>
+    <a href="dashboard_crm.html" class="tab-btn">Análise CRM</a>
   </div>
 
   <div class="page">
@@ -694,7 +690,7 @@
       <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
     </div>
 
-    <div id="tab-visao-geral" class="tab-content active">
+
       <!-- KPIs linha 1 -->
       <p class="section-title">Visão geral — KPIs Globais</p>
     <div class="kpi-grid">
@@ -862,96 +858,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- New CRM tab content -->
-    <div id="tab-analise-crm" class="tab-content">
-      <!-- KPIs CRM -->
-      <p class="section-title">KPIs Exclusivos CRM</p>
-      <div class="kpi-grid">
-        <div class="kpi">
-          <div class="kpi-label">Receita CRM</div>
-          <div class="kpi-value" id="k-crm-receita">—</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Sessões CRM</div>
-          <div class="kpi-value" id="k-crm-sessoes">—</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Transações CRM</div>
-          <div class="kpi-value" id="k-crm-transacoes">—</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Conversão CRM</div>
-          <div class="kpi-value" id="k-crm-conversao">—</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Ticket Médio CRM</div>
-          <div class="kpi-value" id="k-crm-ticket">—</div>
-        </div>
-      </div>
-
-      <!-- Divisão Automação vs Manual e Site vs App -->
-      <p class="section-title">Origem dos Disparos & Canais de Venda</p>
-      <div class="grid-2">
-        <div class="card">
-          <h3>Tipos de Disparos no CRM</h3>
-          <div class="legend" id="leg-crm-disparos"></div>
-          <div style="position:relative;width:100%;height:200px"><canvas id="chart-crm-disparos"></canvas></div>
-          <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-              <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Automático (Architect)</div>
-              <div style="font-size:16px; font-weight:bold; font-family:var(--mono); color:var(--accent);" id="v-crm-auto-rec">—</div>
-              <div style="font-size:11px; color:var(--text2);" id="v-crm-auto-pct">—</div>
-            </div>
-            <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-              <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Manual (Campanhas)</div>
-              <div style="font-size:16px; font-weight:bold; font-family:var(--mono); color:#4b8ef5;" id="v-crm-manual-rec">—</div>
-              <div style="font-size:11px; color:var(--text2);" id="v-crm-manual-pct">—</div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <h3>Participação por Canal (Site vs App) no CRM</h3>
-          <div class="legend" id="leg-crm-pdv"></div>
-          <div style="position:relative;width:100%;height:200px"><canvas id="chart-crm-pdv-donut"></canvas></div>
-          <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-              <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Site (Web)</div>
-              <div style="font-size:16px; font-weight:bold; font-family:var(--mono); color:var(--site);" id="v-crm-site-rec">—</div>
-              <div style="font-size:11px; color:var(--text2);" id="v-crm-site-pct">—</div>
-            </div>
-            <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-              <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">App (Mobile)</div>
-              <div style="font-size:16px; font-weight:bold; font-family:var(--mono); color:var(--app);" id="v-crm-app-rec">—</div>
-              <div style="font-size:11px; color:var(--text2);" id="v-crm-app-pct">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Performance de Origem / Mídia e Evolução -->
-      <p class="section-title">Performance de Origem / Mídia e Evolução</p>
-      <div class="card">
-        <h3>Melhores Origens / Mídias de CRM por Receita</h3>
-        <div style="position:relative;width:100%;height:280px"><canvas id="chart-crm-performance"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Evolução Diária da Receita de CRM (Automático vs Manual)</h3>
-        <div class="legend" id="leg-crm-evolucao"></div>
-        <div style="position:relative;width:100%;height:220px"><canvas id="chart-crm-evolucao"></canvas></div>
-      </div>
-
-      <!-- Highlights -->
-      <p class="section-title">Highlights & Insights do Período</p>
-      <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 20px;">
-        <h3 style="color:var(--accent); margin-bottom: 15px;">Destaques de Performance</h3>
-        <ul id="crm-highlights-list" style="margin-left: 20px; color: var(--text); line-height: 1.6; font-size: 13px;">
-          <!-- Dynamic highlights go here -->
-        </ul>
-      </div>
-    </div>
 
     <div class="footer">Atualizado automaticamente a partir do Google Sheets · Grupo Guanabara</div>
   </div>
@@ -970,21 +876,7 @@
       const txt = String(r.search_text || '').toLowerCase();
       return txt.includes('architect') || txt.includes('architecht');
     }
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById('tab-' + tabId).classList.add('active');
-      if (btn) {
-        btn.classList.add('active');
-      } else {
-        const btns = document.querySelectorAll('.tab-btn');
-        if (tabId === 'visao-geral' && btns[0]) btns[0].classList.add('active');
-        if (tabId === 'analise-crm' && btns[1]) btns[1].classList.add('active');
-      }
-      
-      updateAll();
-    }
+    // Navegação de abas via links
 
     function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '') }
     function findKey(row, candidates) { const keys = Object.keys(row); for (const c of candidates) { const nc = norm(c); const k = keys.find(k => norm(k) === nc); if (k) return k; } return candidates[0] }
@@ -993,7 +885,26 @@
     function fmtC(v) { if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; return fmtR(v) }
     function parseNum(s) { if (!s && s !== 0) return 0; s = String(s).trim().replace(/\s/g, ''); if (s.includes('.') && s.includes(',')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (s.includes(',') && !s.includes('.')) { s = s.replace(',', '.'); } return parseFloat(s) || 0 }
     function parseDate(d) { if (!d) return null; const s = String(d).trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) { if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` } } if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; return s }
-    function isInsider(r) { return String(r.search_text).toLowerCase().includes('insider') }
+    function isInsider(r) {
+      const INSIDER_SOURCES = [
+        'insider/architect_email',
+        'insider/architect_whatsapp',
+        'insider/web_push',
+        'insider/email',
+        'insider/architect_web_push',
+        'insider/apppush',
+        'insider/mobile_messaging',
+        'insider/architect_sms',
+        'insider/whatsapp_business_api',
+        'insider/whatsappcrm',
+        'insider/architect_app_push',
+        'insider/single_wpp',
+        'insider/webpush',
+        'insider/in_app'
+      ];
+      const normMidia = String(r.midia).replace(/\s+/g, '');
+      return INSIDER_SOURCES.includes(normMidia);
+    }
     function delta(a, b) { if (b === 0) return null; return (a - b) / Math.abs(b) * 100 }
 
     function getFilteredBase(ini, fim, pdv) {
@@ -1281,175 +1192,7 @@
         options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
       });
 
-      // ==========================================
-      // --- ANÁLISE CRM TAB CALCULATIONS ---
-      // ==========================================
-      const crmData = dataBase.filter(r => isCRM(r.canal));
-      
-      const crmRec = crmData.reduce((a, r) => a + r.receita, 0);
-      const crmSess = crmData.reduce((a, r) => a + r.sessoes, 0);
-      const crmTrans = crmData.reduce((a, r) => a + r.trans, 0);
-      const crmConv = crmSess > 0 ? (crmTrans / crmSess * 100) : 0;
-      const crmTicket = crmTrans > 0 ? (crmRec / crmTrans) : 0;
-      
-      const totalRec = dataBase.reduce((a, r) => a + r.receita, 0);
-      const totalSess = dataBase.reduce((a, r) => a + r.sessoes, 0);
-      const totalTrans = dataBase.reduce((a, r) => a + r.trans, 0);
-      
-      const crmRecShare = totalRec > 0 ? (crmRec / totalRec * 100) : 0;
-      const crmSessShare = totalSess > 0 ? (crmSess / totalSess * 100) : 0;
-      const crmTransShare = totalTrans > 0 ? (crmTrans / totalTrans * 100) : 0;
-
-      // Update CRM KPIs
-      document.getElementById('k-crm-receita').innerHTML = fmtR(crmRec) + `<span class="kpi-delta neu" style="margin-left:5px; font-size:10px;">${crmRecShare.toFixed(1)}% do total</span>`;
-      document.getElementById('k-crm-sessoes').innerHTML = fmt(crmSess) + `<span class="kpi-delta neu" style="margin-left:5px; font-size:10px;">${crmSessShare.toFixed(1)}% do total</span>`;
-      document.getElementById('k-crm-transacoes').innerHTML = fmt(crmTrans) + `<span class="kpi-delta neu" style="margin-left:5px; font-size:10px;">${crmTransShare.toFixed(1)}% do total</span>`;
-      document.getElementById('k-crm-conversao').innerHTML = crmConv > 0 ? crmConv.toFixed(2) + '%' : '—';
-      document.getElementById('k-crm-ticket').innerHTML = crmTicket > 0 ? fmtR(crmTicket) : '—';
-
-      // Auto vs Manual
-      const autoData = crmData.filter(r => isAutomated(r));
-      const manualData = crmData.filter(r => !isAutomated(r));
-      
-      const autoRec = autoData.reduce((a, r) => a + r.receita, 0);
-      const autoSess = autoData.reduce((a, r) => a + r.sessoes, 0);
-      const autoTrans = autoData.reduce((a, r) => a + r.trans, 0);
-      const autoConv = autoSess > 0 ? (autoTrans / autoSess * 100) : 0;
-      const autoPct = crmRec > 0 ? (autoRec / crmRec * 100) : 0;
-      
-      const manualRec = manualData.reduce((a, r) => a + r.receita, 0);
-      const manualSess = manualData.reduce((a, r) => a + r.sessoes, 0);
-      const manualTrans = manualData.reduce((a, r) => a + r.trans, 0);
-      const manualConv = manualSess > 0 ? (manualTrans / manualSess * 100) : 0;
-      const manualPct = crmRec > 0 ? (manualRec / crmRec * 100) : 0;
-
-      document.getElementById('v-crm-auto-rec').textContent = fmtR(autoRec);
-      document.getElementById('v-crm-auto-pct').textContent = autoPct.toFixed(1) + '% do CRM · Conv: ' + autoConv.toFixed(2) + '%';
-      document.getElementById('v-crm-manual-rec').textContent = fmtR(manualRec);
-      document.getElementById('v-crm-manual-pct').textContent = manualPct.toFixed(1) + '% do CRM · Conv: ' + manualConv.toFixed(2) + '%';
-
-      // Site vs App in CRM
-      const siteCrmData = crmData.filter(r => r.pdv === 'Site');
-      const appCrmData = crmData.filter(r => r.pdv === 'App');
-      
-      const siteCrmRec = siteCrmData.reduce((a, r) => a + r.receita, 0);
-      const siteCrmPct = crmRec > 0 ? (siteCrmRec / crmRec * 100) : 0;
-      const appCrmRec = appCrmData.reduce((a, r) => a + r.receita, 0);
-      const appCrmPct = crmRec > 0 ? (appCrmRec / crmRec * 100) : 0;
-
-      document.getElementById('v-crm-site-rec').textContent = fmtR(siteCrmRec);
-      document.getElementById('v-crm-site-pct').textContent = siteCrmPct.toFixed(1) + '% do CRM';
-      document.getElementById('v-crm-app-rec').textContent = fmtR(appCrmRec);
-      document.getElementById('v-crm-app-pct').textContent = appCrmPct.toFixed(1) + '% do CRM';
-
-      // Doughnut Charts
-      dc('crm-disparos');
-      leg('leg-crm-disparos', [{ color: C.crm, label: 'Automático' }, { color: '#4b8ef5', label: 'Manual' }]);
-      charts['crm-disparos'] = new Chart(document.getElementById('chart-crm-disparos'), {
-        type: 'doughnut',
-        data: { labels: ['Automático', 'Manual'], datasets: [{ data: [autoRec, manualRec], backgroundColor: [C.crm, '#4b8ef5'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
-      });
-
-      dc('crm-pdv-donut');
-      leg('leg-crm-pdv', [{ color: C.site, label: 'Site' }, { color: C.app, label: 'App' }]);
-      charts['crm-pdv-donut'] = new Chart(document.getElementById('chart-crm-pdv-donut'), {
-        type: 'doughnut',
-        data: { labels: ['Site', 'App'], datasets: [{ data: [siteCrmRec, appCrmRec], backgroundColor: [C.site, C.app], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
-      });
-
-      // Best Performing Source/Mediums Chart
-      const crmMidiaMap = {};
-      crmData.forEach(r => {
-        if (r.midia) {
-          if (!crmMidiaMap[r.midia]) crmMidiaMap[r.midia] = 0;
-          crmMidiaMap[r.midia] += r.receita;
-        }
-      });
-      const topCrmMidias = Object.keys(crmMidiaMap).sort((a,b) => crmMidiaMap[b] - crmMidiaMap[a]).slice(0, 8);
-      const topCrmMidiasData = topCrmMidias.map(m => crmMidiaMap[m]);
-      
-      dc('crm-performance');
-      charts['crm-performance'] = new Chart(document.getElementById('chart-crm-performance'), {
-        type: 'bar',
-        data: {
-          labels: topCrmMidias,
-          datasets: [{
-            data: topCrmMidiasData,
-            backgroundColor: topCrmMidias.map((_, i) => palette[i % palette.length]),
-            borderRadius: 4
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              color: '#f0f0ee', font: TFS,
-              formatter: v => {
-                const pct = crmRec > 0 ? (v / crmRec * 100).toFixed(1) : 0;
-                return v > 0 ? `${fmtC(v)} (${pct}%)` : '';
-              },
-              anchor: 'end', align: 'right'
-            }
-          },
-          scales: { x: { display: false, min: 0 }, y: { ticks: { color: TICK, font: TFS }, grid: { display: false } } }
-        }
-      });
-
-      // Evolução Diária da Receita de CRM (Automático vs Manual) Chart
-      const crmDatesMap = {};
-      crmData.forEach(r => {
-        if (!crmDatesMap[r.date]) crmDatesMap[r.date] = { auto: 0, manual: 0 };
-        const isAuto = isAutomated(r);
-        if (isAuto) crmDatesMap[r.date].auto += r.receita;
-        else crmDatesMap[r.date].manual += r.receita;
-      });
-      const crmDates = Object.keys(crmDatesMap).sort();
-      const autoEvol = crmDates.map(d => Math.round(crmDatesMap[d].auto));
-      const manualEvol = crmDates.map(d => Math.round(crmDatesMap[d].manual));
-
-      dc('crm-evolucao');
-      leg('leg-crm-evolucao', [{color: C.crm, label: 'Automático'}, {color: '#4b8ef5', label: 'Manual'}]);
-      charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
-        type: 'line',
-        data: {
-          labels: crmDates,
-          datasets: [
-            { label: 'Automático', data: autoEvol, borderColor: C.crm, backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-            { label: 'Manual', data: manualEvol, borderColor: '#4b8ef5', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
-          ]
-        },
-        options: lineOpts(v => fmtC(v))
-      });
-
-      // Highlights
-      let bestDay = '—', bestDayRec = 0;
-      crmDates.forEach(d => {
-        const rec = crmDatesMap[d].auto + crmDatesMap[d].manual;
-        if (rec > bestDayRec) {
-          bestDayRec = rec;
-          bestDay = d;
-        }
-      });
-
-      const hList = document.getElementById('crm-highlights-list');
-      if (hList) {
-        const bestDayFmt = bestDay !== '—' ? bestDay.split('-').reverse().join('/') : '—';
-        const topMidia = topCrmMidias[0] || '—';
-        const topMidiaRec = topCrmMidiasData[0] || 0;
-        const topMidiaPct = crmRec > 0 ? (topMidiaRec / crmRec * 100).toFixed(1) : 0;
-        
-        let html = `
-          <li style="margin-bottom: 8px;">🎯 <strong>Receita & Share:</strong> O faturamento total de CRM foi de <strong>${fmtR(crmRec)}</strong>, representando <strong>${crmRecShare.toFixed(1)}%</strong> da receita total mapeada no período (R$ ${fmtC(totalRec)}).</li>
-          <li style="margin-bottom: 8px;">⚡ <strong>Canal Principal:</strong> A origem/mídia líder foi <strong>${topMidia}</strong>, acumulando <strong>${fmtR(topMidiaRec)}</strong> (<strong>${topMidiaPct}%</strong> da receita de CRM).</li>
-          <li style="margin-bottom: 8px;">🤖 <strong>Automação vs Manual:</strong> Disparos automáticos (Architect) representam <strong>${autoPct.toFixed(1)}%</strong> da receita (<strong>${fmtR(autoRec)}</strong> com conversão de <strong>${autoConv.toFixed(2)}%</strong>). Campanhas manuais respondem por <strong>${manualPct.toFixed(1)}%</strong> (<strong>${fmtR(manualRec)}</strong> com conversão de <strong>${manualConv.toFixed(2)}%</strong>).</li>
-          <li style="margin-bottom: 8px;">📱 <strong>Site vs App:</strong> O <strong>App</strong> representa <strong>${appCrmPct.toFixed(1)}%</strong> da receita de CRM (<strong>${fmtR(appCrmRec)}</strong>), enquanto o <strong>Site</strong> representa <strong>${siteCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(siteCrmRec)}</strong>).</li>
-          <li style="margin-bottom: 8px;">📅 <strong>Pico de Vendas:</strong> O dia de melhor performance para o CRM no período selecionado foi <strong>${bestDayFmt}</strong>, registrando um faturamento de <strong>${fmtR(bestDayRec)}</strong>.</li>
-        `;
-        hList.innerHTML = html;
-      }
+      // Fim das renderizações globais
     }
 
     /* ── Comparativo ── */
