@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análise CRM — Grupo Guanabara</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #0e0f11;
+      --bg2: #16181c;
+      --bg3: #1e2126;
+      --border: rgba(255, 255, 255, .07);
+      --border2: rgba(255, 255, 255, .12);
+      --text: #f0f0ee;
+      --text2: #8a8e96;
+      --text3: #555960;
+      --crm: #1fd196;
+      --outros: #4b8ef5;
+      --site: #a078f0;
+      --app: #f07040;
+      --accent: #1fd196;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 4rem
+    }
+
+    .header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px
+    }
+
+    .logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      font-size: 14px;
+      color: #0e0f11
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 500
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 1px
+    }
+
+    .status-badge {
+      font-size: 11px;
+      font-family: var(--mono);
+      background: rgba(31, 209, 150, .1);
+      color: var(--accent);
+      border: 1px solid rgba(31, 209, 150, .25);
+      border-radius: 20px;
+      padding: 4px 12px
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 10px;
+      margin: 1.5rem auto 0;
+      max-width: 1200px;
+      padding: 0 2rem;
+    }
+
+    .tab-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--border2);
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: rgba(31, 209, 150, 0.08);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 2rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .filter-group label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em
+    }
+
+    .filters select,
+    .filters input {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      height: 36px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .15s
+    }
+
+    .filters select:hover,
+    .filters input:hover {
+      border-color: rgba(255, 255, 255, .25)
+    }
+
+    .filters select:focus,
+    .filters input:focus {
+      border-color: var(--accent)
+    }
+
+    .filter-sep {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+      margin: 0 4px
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 1.5rem
+    }
+
+    .kpi {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s
+    }
+
+    .kpi:hover {
+      border-color: var(--border2)
+    }
+
+    .kpi::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: .6
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 300;
+      color: var(--text);
+      font-family: var(--mono);
+      letter-spacing: -1px
+    }
+
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 4px;
+      font-family: var(--mono);
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin: 2rem 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border)
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 12px
+    }
+
+    .card h3 {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 12px
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0
+    }
+
+    .multi-select {
+      position: relative
+    }
+
+    .ms-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 7px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 220px;
+      font-size: 12px;
+      font-family: var(--font)
+    }
+
+    .ms-btn:hover {
+      border-color: var(--accent)
+    }
+
+    .ms-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 280px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-top: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, .5);
+      padding: 5px
+    }
+
+    .ms-dropdown.open {
+      display: block
+    }
+
+    .ms-item {
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px
+    }
+
+    .ms-item:hover {
+      background: rgba(255, 255, 255, .05)
+    }
+
+    .ms-item input {
+      cursor: pointer;
+      accent-color: var(--accent)
+    }
+
+    .ms-summary {
+      font-size: 10px;
+      color: var(--text2);
+      display: block;
+      margin-top: 2px
+    }
+
+    .cmp-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .15s
+    }
+
+    .cmp-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(31, 209, 150, .08)
+    }
+
+    .data-table-container {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .data-table th {
+      color: var(--text2);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border2);
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .num-mono {
+      font-family: var(--mono);
+    }
+
+    .badge-pdv {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .badge-pdv.site {
+      background: rgba(160, 120, 240, 0.15);
+      color: #b395f3;
+    }
+    .badge-pdv.app {
+      background: rgba(240, 112, 64, 0.15);
+      color: #fca385;
+    }
+
+    .badge-type {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .badge-type.auto {
+      background: rgba(31, 209, 150, 0.15);
+      color: var(--crm);
+    }
+    .badge-type.manual {
+      background: rgba(75, 142, 245, 0.15);
+      color: #72a8ff;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border)
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg)
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 3px
+    }
+
+    @media(max-width:900px) {
+      .kpi-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr
+      }
+
+      .page {
+        padding: 1rem
+      }
+
+      .header {
+        padding: 1rem
+      }
+    }
+
+    @media(max-width:600px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">GG</div>
+      <div>
+        <div class="header-title">Dashboard CRM — Análise CRM</div>
+        <div class="header-sub">Grupo Guanabara · Desempenho de CRM</div>
+      </div>
+    </div>
+    <span class="status-badge" id="status-txt">Carregando...</span>
+  </header>
+
+  <div class="tab-bar">
+    <a href="index.html" class="tab-btn">Visão Geral</a>
+    <a href="dashboard_crm.html" class="tab-btn active">Análise CRM</a>
+  </div>
+
+  <div class="page">
+
+    <!-- Filtros principais -->
+    <div class="filters">
+      <div class="filter-group"><label>Ponto de venda</label>
+        <select id="f-pdv">
+          <option value="">Todos</option>
+          <option value="Site">Site</option>
+          <option value="App">App</option>
+        </select>
+      </div>
+
+      <div class="filter-group"><label>Tipo de Disparo</label>
+        <select id="f-disparo">
+          <option value="">Todos</option>
+          <option value="auto">Automático (Architect)</option>
+          <option value="manual">Manual (Campanhas)</option>
+        </select>
+      </div>
+
+      <div class="filter-group"><label>Buscar Campanha</label>
+        <input type="text" id="f-campanha" placeholder="Digite o nome..." style="width:180px;" />
+      </div>
+
+      <div class="filter-sep"></div>
+
+      <div class="filter-group multi-select" id="fg-origens">
+        <label>Origens / Mídias CRM</label>
+        <div class="ms-btn" onclick="document.getElementById('ms-list').classList.toggle('open')">
+          <span id="ms-label">Nenhuma selecionada</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div class="ms-dropdown" id="ms-list"></div>
+      </div>
+
+      <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" /></div>
+      <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" /></div>
+      <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
+    </div>
+
+    <!-- KPIs CRM -->
+    <p class="section-title">KPIs Exclusivos CRM (Comparados com Total Geral)</p>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Receita CRM</div>
+        <div class="kpi-value" id="k-crm-receita">—</div>
+        <div class="kpi-sub" id="s-crm-receita">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sessões CRM</div>
+        <div class="kpi-value" id="k-crm-sessoes">—</div>
+        <div class="kpi-sub" id="s-crm-sessoes">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Transações CRM</div>
+        <div class="kpi-value" id="k-crm-transacoes">—</div>
+        <div class="kpi-sub" id="s-crm-transacoes">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conversão CRM</div>
+        <div class="kpi-value" id="k-crm-conversao">—</div>
+        <div class="kpi-sub" style="opacity: 0;">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ticket Médio CRM</div>
+        <div class="kpi-value" id="k-crm-ticket">—</div>
+        <div class="kpi-sub" style="opacity: 0;">—</div>
+      </div>
+    </div>
+
+    <!-- Divisão Automação vs Manual e Site vs App -->
+    <p class="section-title">Distribuição por Canal & Tipo de Disparo no CRM</p>
+    <div class="grid-2">
+      <!-- Site vs App -->
+      <div class="card">
+        <h3>Participação por Canal (Site vs App) no CRM</h3>
+        <div class="legend" id="leg-crm-pdv"></div>
+        <div style="position:relative;width:100%;height:180px"><canvas id="chart-crm-pdv-donut"></canvas></div>
+        <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Site (Web)</div>
+            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:var(--site);" id="v-crm-site-rec">—</div>
+            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-site-det">—</div>
+          </div>
+          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">App (Mobile)</div>
+            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:var(--app);" id="v-crm-app-rec">—</div>
+            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-app-det">—</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Automático vs Manual -->
+      <div class="card">
+        <h3>Tipo de Disparo (Automático vs Manual) no CRM</h3>
+        <div class="legend" id="leg-crm-disparos"></div>
+        <div style="position:relative;width:100%;height:180px"><canvas id="chart-crm-disparos"></canvas></div>
+        <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Automático (Architect)</div>
+            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:var(--crm);" id="v-crm-auto-rec">—</div>
+            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-auto-det">—</div>
+          </div>
+          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Manual (Campanhas)</div>
+            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:#4b8ef5;" id="v-crm-manual-rec">—</div>
+            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-manual-det">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Origens de Sessão -->
+    <p class="section-title">Análise de Origens / Mídias de Tráfego de CRM</p>
+    <div class="card">
+      <h3>Ranking de Faturamento de Origens/Mídias de CRM</h3>
+      <div style="position:relative;width:100%;height:220px;margin-bottom:15px;"><canvas id="chart-crm-performance"></canvas></div>
+      <div class="data-table-container">
+        <table class="data-table" id="table-crm-origens">
+          <thead>
+            <tr>
+              <th>Origem / Mídia da Sessão</th>
+              <th class="text-right">Receita (R$)</th>
+              <th class="text-right">Share CRM (%)</th>
+              <th class="text-right">Sessões</th>
+              <th class="text-right">Transações</th>
+              <th class="text-right">Conversão (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Top Campanhas -->
+    <p class="section-title">Melhores Campanhas no Universo CRM</p>
+    <div class="card">
+      <h3>Top 15 Campanhas por Receita</h3>
+      <div class="data-table-container">
+        <table class="data-table" id="table-crm-campanhas">
+          <thead>
+            <tr>
+              <th>Campanha</th>
+              <th>PDV</th>
+              <th>Tipo</th>
+              <th class="text-right">Receita (R$)</th>
+              <th class="text-right">Share CRM (%)</th>
+              <th class="text-right">Sessões</th>
+              <th class="text-right">Transações</th>
+              <th class="text-right">Conversão (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Evolução -->
+    <p class="section-title">Evolução de Faturamento CRM</p>
+    <div class="card">
+      <h3>Evolução Diária da Receita de CRM (Automático vs Manual)</h3>
+      <div class="legend" id="leg-crm-evolucao"></div>
+      <div style="position:relative;width:100%;height:240px"><canvas id="chart-crm-evolucao"></canvas></div>
+    </div>
+
+    <!-- Highlights -->
+    <p class="section-title">Highlights & Insights do Período Mapeado</p>
+    <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 20px;">
+      <h3 style="color:var(--accent); margin-bottom: 15px;">Destaques de Performance de CRM</h3>
+      <ul id="crm-highlights-list" style="margin-left: 20px; color: var(--text); line-height: 1.6; font-size: 13px;">
+        <!-- Dynamic highlights go here -->
+      </ul>
+    </div>
+
+    <div class="footer">Atualizado automaticamente a partir do GA4 · Grupo Guanabara</div>
+  </div>
+
+  <script>
+    const CSV_URL = './dados_dashboard.csv';
+    const GRP_COLORS = { Direct: '#a078f0', 'Not Set': '#8a8e96', CRM: '#1fd196', Paid: '#f07040', Organic: '#f0a030', Referral: '#40f0d0', Blog: '#f040a0', Others: '#4b8ef5' };
+    const palette = ['#e05070', '#e0b040', '#40e0c0', '#9050e0', '#f06090', '#70c040', '#8090a0'];
+    const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030' };
+    const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
+    const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
+    let rawData = [], charts = {}, maxDate = '';
+
+    function isCRM(canal) { return String(canal).toUpperCase() === 'CRM' }
+    function isAutomated(r) {
+      const txt = String(r.search_text || '').toLowerCase();
+      return txt.includes('architect') || txt.includes('architecht');
+    }
+
+    function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '') }
+    function findKey(row, candidates) { const keys = Object.keys(row); for (const c of candidates) { const nc = norm(c); const k = keys.find(k => norm(k) === nc); if (k) return k; } return candidates[0] }
+    function fmt(v) { return Intl.NumberFormat('pt-BR').format(Math.round(v)) }
+    function fmtR(v) { return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v)) }
+    function fmtC(v) { if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; return fmtR(v) }
+    function parseNum(s) { if (!s && s !== 0) return 0; s = String(s).trim().replace(/\s/g, ''); if (s.includes('.') && s.includes(',')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (s.includes(',') && !s.includes('.')) { s = s.replace(',', '.'); } return parseFloat(s) || 0 }
+    function parseDate(d) { if (!d) return null; const s = String(d).trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) { if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` } } if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; return s }
+    
+    function getFilteredBase(ini, fim, pdv) {
+      return rawData.filter(r => {
+        if (pdv && r.pdv !== pdv) return false;
+        if (ini && r.date < ini) return false;
+        if (fim && r.date > fim) return false;
+        return true;
+      });
+    }
+
+    function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+    function leg(id, items) { const el = document.getElementById(id); if (!el) return; el.innerHTML = items.map(i => `<span><span class="legend-dot" style="background:${i.color}"></span>${i.label}</span>`).join('') }
+    function lineOpts(yFmt) { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${yFmt ? yFmt(ctx.raw) : ctx.raw}` } } }, scales: { x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } }, y: { min: 0, ticks: { callback: yFmt || (v => v), color: TICK, font: TF }, grid: { color: GRID } } } } }
+
+    function updateAll() {
+      Chart.register(ChartDataLabels);
+      
+      const pdv = document.getElementById('f-pdv').value;
+      const disparo = document.getElementById('f-disparo').value;
+      const campanhaBusca = document.getElementById('f-campanha').value.toLowerCase().trim();
+      const ini = document.getElementById('f-inicio').value;
+      const fim = document.getElementById('f-fim').value;
+
+      // 1. Get filtered base data for ALL channels (to calculate total global values for share %)
+      const dataBase = getFilteredBase(ini, fim, pdv);
+      const totalRec = dataBase.reduce((a, r) => a + r.receita, 0);
+      const totalSess = dataBase.reduce((a, r) => a + r.sessoes, 0);
+      const totalTrans = dataBase.reduce((a, r) => a + r.trans, 0);
+
+      // 2. Filter base data to CRM only
+      let crmBase = dataBase.filter(r => isCRM(r.canal));
+
+      // 3. Apply Tipo de Disparo filter
+      if (disparo === 'auto') {
+        crmBase = crmBase.filter(r => isAutomated(r));
+      } else if (disparo === 'manual') {
+        crmBase = crmBase.filter(r => !isAutomated(r));
+      }
+
+      // 4. Apply Busca de Campanha filter
+      if (campanhaBusca) {
+        crmBase = crmBase.filter(r => {
+          return String(r.campanha || '').toLowerCase().includes(campanhaBusca);
+        });
+      }
+
+      // 5. Apply multi-select Origens/Mídias filter
+      window.selectedOrigens = Array.from(document.querySelectorAll('#ms-list input:checked')).map(cb => cb.value);
+      const msLabel = document.getElementById('ms-label');
+      if (window.selectedOrigens.length === 0) {
+        msLabel.textContent = 'Nenhuma selecionada';
+      } else if (window.selectedOrigens.length === 1) {
+        msLabel.textContent = window.selectedOrigens[0].slice(0, 20) + '...';
+      } else {
+        msLabel.textContent = window.selectedOrigens.length + ' selecionadas';
+      }
+
+      let data = crmBase;
+      if (window.selectedOrigens.length > 0) {
+        const selSet = new Set(window.selectedOrigens);
+        data = crmBase.filter(r => selSet.has(r.midia));
+      }
+
+      // Calculate CRM KPIs
+      const crmRec = data.reduce((a, r) => a + r.receita, 0);
+      const crmSess = data.reduce((a, r) => a + r.sessoes, 0);
+      const crmTrans = data.reduce((a, r) => a + r.trans, 0);
+      const crmConv = crmSess > 0 ? (crmTrans / crmSess * 100) : 0;
+      const crmTicket = crmTrans > 0 ? (crmRec / crmTrans) : 0;
+      
+      const crmRecShare = totalRec > 0 ? (crmRec / totalRec * 100) : 0;
+      const crmSessShare = totalSess > 0 ? (crmSess / totalSess * 100) : 0;
+      const crmTransShare = totalTrans > 0 ? (crmTrans / totalTrans * 100) : 0;
+
+      // Update CRM KPIs
+      document.getElementById('k-crm-receita').innerHTML = fmtR(crmRec);
+      document.getElementById('s-crm-receita').innerHTML = `${crmRecShare.toFixed(2)}% do faturamento total`;
+      document.getElementById('k-crm-sessoes').innerHTML = fmt(crmSess);
+      document.getElementById('s-crm-sessoes').innerHTML = `${crmSessShare.toFixed(2)}% do tráfego total`;
+      document.getElementById('k-crm-transacoes').innerHTML = fmt(crmTrans);
+      document.getElementById('s-crm-transacoes').innerHTML = `${crmTransShare.toFixed(2)}% das transações totais`;
+      document.getElementById('k-crm-conversao').innerHTML = crmConv > 0 ? crmConv.toFixed(2) + '%' : '—';
+      document.getElementById('k-crm-ticket').innerHTML = crmTicket > 0 ? fmtR(crmTicket) : '—';
+
+      // --- Site vs App in CRM ---
+      const siteCrmData = data.filter(r => r.pdv === 'Site');
+      const appCrmData = data.filter(r => r.pdv === 'App');
+      
+      const siteCrmRec = siteCrmData.reduce((a, r) => a + r.receita, 0);
+      const siteCrmSess = siteCrmData.reduce((a, r) => a + r.sessoes, 0);
+      const siteCrmTrans = siteCrmData.reduce((a, r) => a + r.trans, 0);
+      const siteCrmConv = siteCrmSess > 0 ? (siteCrmTrans / siteCrmSess * 100) : 0;
+      const siteCrmPct = crmRec > 0 ? (siteCrmRec / crmRec * 100) : 0;
+      
+      const appCrmRec = appCrmData.reduce((a, r) => a + r.receita, 0);
+      const appCrmSess = appCrmData.reduce((a, r) => a + r.sessoes, 0);
+      const appCrmTrans = appCrmData.reduce((a, r) => a + r.trans, 0);
+      const appCrmConv = appCrmSess > 0 ? (appCrmTrans / appCrmSess * 100) : 0;
+      const appCrmPct = crmRec > 0 ? (appCrmRec / crmRec * 100) : 0;
+
+      document.getElementById('v-crm-site-rec').textContent = fmtR(siteCrmRec);
+      document.getElementById('v-crm-site-det').textContent = `${siteCrmPct.toFixed(1)}% do CRM · Conv: ${siteCrmConv.toFixed(2)}%`;
+      document.getElementById('v-crm-app-rec').textContent = fmtR(appCrmRec);
+      document.getElementById('v-crm-app-det').textContent = `${appCrmPct.toFixed(1)}% do CRM · Conv: ${appCrmConv.toFixed(2)}%`;
+
+      dc('crm-pdv-donut');
+      leg('leg-crm-pdv', [{ color: C.site, label: 'Site' }, { color: C.app, label: 'App' }]);
+      charts['crm-pdv-donut'] = new Chart(document.getElementById('chart-crm-pdv-donut'), {
+        type: 'doughnut',
+        data: { labels: ['Site', 'App'], datasets: [{ data: [siteCrmRec, appCrmRec], backgroundColor: [C.site, C.app], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
+      });
+
+      // --- Automático vs Manual in CRM ---
+      const autoData = data.filter(r => isAutomated(r));
+      const manualData = data.filter(r => !isAutomated(r));
+      
+      const autoRec = autoData.reduce((a, r) => a + r.receita, 0);
+      const autoSess = autoData.reduce((a, r) => a + r.sessoes, 0);
+      const autoTrans = autoData.reduce((a, r) => a + r.trans, 0);
+      const autoConv = autoSess > 0 ? (autoTrans / autoSess * 100) : 0;
+      const autoPct = crmRec > 0 ? (autoRec / crmRec * 100) : 0;
+      
+      const manualRec = manualData.reduce((a, r) => a + r.receita, 0);
+      const manualSess = manualData.reduce((a, r) => a + r.sessoes, 0);
+      const manualTrans = manualData.reduce((a, r) => a + r.trans, 0);
+      const manualConv = manualSess > 0 ? (manualTrans / manualSess * 100) : 0;
+      const manualPct = crmRec > 0 ? (manualRec / crmRec * 100) : 0;
+
+      document.getElementById('v-crm-auto-rec').textContent = fmtR(autoRec);
+      document.getElementById('v-crm-auto-det').textContent = `${autoPct.toFixed(1)}% do CRM · Conv: ${autoConv.toFixed(2)}%`;
+      document.getElementById('v-crm-manual-rec').textContent = fmtR(manualRec);
+      document.getElementById('v-crm-manual-det').textContent = `${manualPct.toFixed(1)}% do CRM · Conv: ${manualConv.toFixed(2)}%`;
+
+      dc('crm-disparos');
+      leg('leg-crm-disparos', [{ color: C.crm, label: 'Automático' }, { color: '#4b8ef5', label: 'Manual' }]);
+      charts['crm-disparos'] = new Chart(document.getElementById('chart-crm-disparos'), {
+        type: 'doughnut',
+        data: { labels: ['Automático', 'Manual'], datasets: [{ data: [autoRec, manualRec], backgroundColor: [C.crm, '#4b8ef5'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
+      });
+
+      // --- Origens de Sessão CRM ---
+      const midiaRecMap = {}, midiaSessMap = {}, midiaTransMap = {};
+      data.forEach(r => {
+        if (r.midia) {
+          midiaRecMap[r.midia] = (midiaRecMap[r.midia] || 0) + r.receita;
+          midiaSessMap[r.midia] = (midiaSessMap[r.midia] || 0) + r.sessoes;
+          midiaTransMap[r.midia] = (midiaTransMap[r.midia] || 0) + r.trans;
+        }
+      });
+
+      const sortedMidias = Object.keys(midiaRecMap).sort((a, b) => midiaRecMap[b] - midiaRecMap[a]);
+      const topCrmMidias = sortedMidias.slice(0, 8);
+      const topCrmMidiasData = topCrmMidias.map(m => midiaRecMap[m]);
+
+      dc('crm-performance');
+      charts['crm-performance'] = new Chart(document.getElementById('chart-crm-performance'), {
+        type: 'bar',
+        data: {
+          labels: topCrmMidias,
+          datasets: [{
+            data: topCrmMidiasData,
+            backgroundColor: topCrmMidias.map((_, i) => palette[i % palette.length]),
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#f0f0ee', font: TFS,
+              formatter: v => {
+                const pct = crmRec > 0 ? (v / crmRec * 100).toFixed(1) : 0;
+                return v > 0 ? `${fmtC(v)} (${pct}%)` : '';
+              },
+              anchor: 'end', align: 'right'
+            }
+          },
+          scales: { x: { display: false, min: 0 }, y: { ticks: { color: TICK, font: TFS }, grid: { display: false } } }
+        }
+      });
+
+      // Populate Origens Table
+      const origensTbody = document.querySelector('#table-crm-origens tbody');
+      if (origensTbody) {
+        if (sortedMidias.length === 0) {
+          origensTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text3); padding:20px;">Nenhum dado encontrado</td></tr>';
+        } else {
+          origensTbody.innerHTML = sortedMidias.map(m => {
+            const r = midiaRecMap[m];
+            const pct = crmRec > 0 ? (r / crmRec * 100).toFixed(1) + '%' : '0.0%';
+            const s = midiaSessMap[m];
+            const t = midiaTransMap[m];
+            const conv = s > 0 ? (t / s * 100).toFixed(2) + '%' : '—';
+            return `
+              <tr>
+                <td style="font-weight: 500;">${m}</td>
+                <td class="text-right num-mono">${fmt(r)}</td>
+                <td class="text-right num-mono">${pct}</td>
+                <td class="text-right num-mono">${fmt(s)}</td>
+                <td class="text-right num-mono">${fmt(t)}</td>
+                <td class="text-right num-mono">${conv}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // --- Top 15 Campanhas Table ---
+      const campMap = {};
+      data.forEach(r => {
+        if (r.campanha && r.campanha !== '(not set)') {
+          const key = r.campanha + '||' + r.pdv + '||' + (isAutomated(r) ? 'auto' : 'manual');
+          if (!campMap[key]) {
+            campMap[key] = { receita: 0, sessoes: 0, trans: 0 };
+          }
+          campMap[key].receita += r.receita;
+          campMap[key].sessoes += r.sessoes;
+          campMap[key].trans += r.trans;
+        }
+      });
+
+      const sortedCampKeys = Object.keys(campMap).sort((a, b) => campMap[b].receita - campMap[a].receita).slice(0, 15);
+      const campanhasTbody = document.querySelector('#table-crm-campanhas tbody');
+      if (campanhasTbody) {
+        if (sortedCampKeys.length === 0) {
+          campanhasTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text3); padding:20px;">Nenhuma campanha com dados encontrada</td></tr>';
+        } else {
+          campanhasTbody.innerHTML = sortedCampKeys.map(k => {
+            const [campName, pdvName, typeName] = k.split('||');
+            const metrics = campMap[k];
+            const share = crmRec > 0 ? (metrics.receita / crmRec * 100).toFixed(1) + '%' : '0.0%';
+            const conv = metrics.sessoes > 0 ? (metrics.trans / metrics.sessoes * 100).toFixed(2) + '%' : '—';
+            return `
+              <tr>
+                <td style="font-weight: 500; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${campName}">${campName}</td>
+                <td><span class="badge-pdv ${pdvName.toLowerCase()}">${pdvName}</span></td>
+                <td><span class="badge-type ${typeName}">${typeName === 'auto' ? 'Automático' : 'Manual'}</span></td>
+                <td class="text-right num-mono">${fmt(metrics.receita)}</td>
+                <td class="text-right num-mono">${share}</td>
+                <td class="text-right num-mono">${fmt(metrics.sessoes)}</td>
+                <td class="text-right num-mono">${fmt(metrics.trans)}</td>
+                <td class="text-right num-mono">${conv}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // --- Evolução Diária da Receita de CRM Chart ---
+      const crmDatesMap = {};
+      data.forEach(r => {
+        if (!crmDatesMap[r.date]) crmDatesMap[r.date] = { auto: 0, manual: 0 };
+        const isAuto = isAutomated(r);
+        if (isAuto) crmDatesMap[r.date].auto += r.receita;
+        else crmDatesMap[r.date].manual += r.receita;
+      });
+      const crmDates = Object.keys(crmDatesMap).sort();
+      const autoEvol = crmDates.map(d => Math.round(crmDatesMap[d].auto));
+      const manualEvol = crmDates.map(d => Math.round(crmDatesMap[d].manual));
+
+      dc('crm-evolucao');
+      leg('leg-crm-evolucao', [{color: C.crm, label: 'Automático (Architect)'}, {color: '#4b8ef5', label: 'Manual (Campanhas)'}]);
+      charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+        type: 'line',
+        data: {
+          labels: crmDates,
+          datasets: [
+            { label: 'Automático', data: autoEvol, borderColor: C.crm, backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+            { label: 'Manual', data: manualEvol, borderColor: '#4b8ef5', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+          ]
+        },
+        options: lineOpts(v => fmtC(v))
+      });
+
+      // Highlights
+      let bestDay = '—', bestDayRec = 0;
+      crmDates.forEach(d => {
+        const rec = crmDatesMap[d].auto + crmDatesMap[d].manual;
+        if (rec > bestDayRec) {
+          bestDayRec = rec;
+          bestDay = d;
+        }
+      });
+
+      const hList = document.getElementById('crm-highlights-list');
+      if (hList) {
+        const bestDayFmt = bestDay !== '—' ? bestDay.split('-').reverse().join('/') : '—';
+        const topMidia = sortedMidias[0] || '—';
+        const topMidiaRec = midiaRecMap[topMidia] || 0;
+        const topMidiaPct = crmRec > 0 ? (topMidiaRec / crmRec * 100).toFixed(1) : 0;
+        
+        let html = `
+          <li style="margin-bottom: 8px;">🎯 <strong>Faturamento & Penetração:</strong> O faturamento total de CRM no período foi de <strong>${fmtR(crmRec)}</strong>, o que representa <strong>${crmRecShare.toFixed(2)}%</strong> do faturamento global (R$ ${fmtC(totalRec)}) obtido nas plataformas de venda.</li>
+          <li style="margin-bottom: 8px;">⚡ <strong>Origem Campeã:</strong> A origem/mídia que mais trouxe receita para o CRM foi <strong>${topMidia}</strong> com <strong>${fmtR(topMidiaRec)}</strong> (fração de <strong>${topMidiaPct}%</strong> das vendas do CRM).</li>
+          <li style="margin-bottom: 8px;">🤖 <strong>Disparos Automáticos vs Manuais:</strong> Automações da plataforma (Architect) somaram <strong>${fmtR(autoRec)}</strong> (<strong>${autoPct.toFixed(1)}%</strong> da receita CRM, com taxa de conversão média de <strong>${autoConv.toFixed(2)}%</strong>). Disparos manuais responderam por <strong>${manualPct.toFixed(1)}%</strong> (soma de <strong>${fmtR(manualRec)}</strong> com conversão de <strong>${manualConv.toFixed(2)}%</strong>).</li>
+          <li style="margin-bottom: 8px;">📱 <strong>Participação Site vs App:</strong> No total mapeado de CRM, as vendas em computadores/móbile via <strong>Site</strong> respondem por <strong>${siteCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(siteCrmRec)}</strong>), enquanto o tráfego via <strong>App</strong> é responsável por <strong>${appCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(appCrmRec)}</strong>).</li>
+          <li style="margin-bottom: 8px;">📅 <strong>Pico do CRM:</strong> O dia com maior pico de vendas de CRM no período selecionado foi o dia <strong>${bestDayFmt}</strong>, com receita faturada de <strong>${fmtR(bestDayRec)}</strong>.</li>
+        `;
+        hList.innerHTML = html;
+      }
+    }
+
+    function resetFilters(initialLoad = false) {
+      document.getElementById('f-pdv').value = '';
+      document.getElementById('f-disparo').value = '';
+      document.getElementById('f-campanha').value = '';
+      
+      let defaultDateStr = '';
+      if (maxDate) {
+        defaultDateStr = maxDate;
+      } else {
+        const today = new Date();
+        const fmt = d => {
+          const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
+          return `${y}-${m}-${da}`;
+        };
+        defaultDateStr = fmt(today);
+      }
+      
+      document.getElementById('f-inicio').value = defaultDateStr;
+      document.getElementById('f-fim').value = defaultDateStr;
+      
+      document.querySelectorAll('#ms-list input').forEach(cb => {
+        cb.checked = false;
+      });
+      
+      if (!initialLoad) {
+        updateAll();
+      }
+    }
+
+    // Event listeners
+    ['f-pdv', 'f-disparo'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateAll);
+    });
+    
+    document.getElementById('f-campanha').addEventListener('input', updateAll);
+
+    ['f-inicio', 'f-fim'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateAll);
+    });
+
+    // Load CSV Data
+    function loadData() {
+      document.getElementById('status-txt').textContent = 'Carregando...';
+      Papa.parse(CSV_URL, {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function (res) {
+          const sample = res.data[0] || {};
+          const K = {
+            pdv: findKey(sample, ['Ponto de Venda', 'Ponto de venda']),
+            date: findKey(sample, ['Data Ajustada', 'Data ajustada', 'Data']),
+            canal: findKey(sample, ['Origem Agrupada', 'Origem agrupada']),
+            origem: findKey(sample, ['Origem Resumida', 'Origem resumida']),
+            campanha: findKey(sample, ['Campanha da sessão', 'Campanha', 'Campaign']),
+            midia: findKey(sample, ['Origem / mídia da sessão', 'Origem / midia', 'Source / Medium']),
+            sessoes: findKey(sample, ['Sessões', 'Sessões', 'Sessoes', 'Sessions']),
+            trans: findKey(sample, ['Transações', 'Transacoes', 'Transações']),
+            receita: findKey(sample, ['Receita', 'receita'])
+          };
+          
+          rawData = res.data.map(r => ({
+            pdv: String(r[K.pdv] || '').trim(),
+            date: parseDate(r[K.date]),
+            canal: String(r[K.canal] || 'Others').trim(),
+            origem: String(r[K.origem] || '').trim(),
+            midia: String(r[K.midia] || '').trim(),
+            campanha: String(r[K.campanha] || '').trim(),
+            search_text: `${r[K.origem] || ''} ${r[K.campanha] || ''} ${r[K.midia] || ''}`.toLowerCase(),
+            sessoes: parseNum(r[K.sessoes]),
+            trans: parseNum(r[K.trans]),
+            receita: parseNum(r[K.receita])
+          })).filter(r => r.date && r.date.length >= 8);
+          
+          const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
+          maxDate = ultimo;
+          document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo || '—');
+
+          // Fallback if today's date has no data yet
+          const currentVal = document.getElementById('f-inicio').value;
+          const hasData = rawData.some(r => r.date === currentVal);
+          if (!hasData && maxDate) {
+            document.getElementById('f-inicio').value = maxDate;
+            document.getElementById('f-fim').value = maxDate;
+          }
+
+          // Populate CRM media sources dropdown
+          const crmRows = rawData.filter(r => isCRM(r.canal));
+          const crmMidiasMap = {};
+          crmRows.forEach(r => {
+            if (r.midia) {
+              crmMidiasMap[r.midia] = (crmMidiasMap[r.midia] || 0) + r.receita;
+            }
+          });
+          const crmMidiasValidas = Object.keys(crmMidiasMap).sort((a, b) => crmMidiasMap[b] - crmMidiasMap[a]);
+
+          const list = document.getElementById('ms-list');
+          if (list) {
+            let html = `
+              <div style="padding:8px; border-bottom:1px solid var(--border); display:flex; gap:5px; flex-direction:column; position:sticky; top:0; background:var(--bg2); z-index:10;">
+                <button type="button" class="cmp-btn" onclick="document.querySelectorAll('#ms-list input').forEach(cb => cb.checked = false); updateAll();" style="width:100%; border-color:var(--border2);">Limpar Seleção</button>
+                <button type="button" class="cmp-btn" onclick="document.getElementById('ms-list').classList.remove('open');" style="width:100%; background:var(--accent); color:#000; border-color:var(--accent); font-weight:500;">OK / Fechar</button>
+              </div>
+            `;
+            crmMidiasValidas.forEach(o => {
+              html += '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(crmMidiasMap[o]) + '</div></div></label>';
+            });
+            list.innerHTML = html;
+          }
+
+          document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
+
+          updateAll();
+        },
+        error: () => { document.getElementById('status-txt').textContent = 'Erro ao carregar dados'; }
+      });
+    }
+
+    resetFilters(true);
+    loadData();
+  </script>
+</body>
+</html>
