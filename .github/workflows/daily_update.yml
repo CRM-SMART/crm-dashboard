@@ -2,8 +2,8 @@ name: "Automacao Dashboard GA4"
 
 on:
   schedule:
-    # Rodar às 09:00 BRT (12:00 UTC) e 14:00 BRT (17:00 UTC)
-    - cron: '0 12,17 * * *'
+    # Rodar às 06:00 BRT (09:00 UTC) e 14:00 BRT (17:00 UTC)
+    - cron: '0 9,17 * * *'
   workflow_dispatch: # Permite rodar o script manualmente clicando em um botão no GitHub
 
 permissions:
@@ -42,8 +42,11 @@ jobs:
           git config --global user.name "Robo Dashboard"
           git config --global user.email "robo@dashboard.com"
           git add dados_dashboard.csv
-          git diff --quiet && git diff --staged --quiet || git commit -m "⚙️ Auto-update: Extraindo dados atualizados do GA4"
-          git push origin main
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "⚙️ Auto-update: Extraindo dados atualizados do GA4"
+            git pull --rebase origin main
+            git push origin main
+          fi
 
       - name: Configurar Pages
         uses: actions/configure-pages@v4
