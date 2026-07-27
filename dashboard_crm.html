@@ -527,6 +527,73 @@
         grid-template-columns: repeat(2, 1fr)
       }
     }
+
+    .highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-bottom: 2rem;
+    }
+    .highlight-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .highlight-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-2px);
+    }
+    .highlight-card-num {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: var(--mono);
+      margin-bottom: 6px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .highlight-card-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .highlight-card-desc {
+      font-size: 11.5px;
+      color: var(--text2);
+      line-height: 1.45;
+    }
+
+    @media(max-width:1024px) {
+      .highlight-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media(max-width:768px) {
+      .highlight-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media(max-width:480px) {
+      .highlight-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
   </style>
 </head>
 
@@ -720,12 +787,25 @@
     </div>
 
     <!-- Highlights -->
-    <p class="section-title">Highlights & Insights do Período Mapeado</p>
-    <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 20px;">
-      <h3 style="color:var(--accent); margin-bottom: 15px;">Destaques de Performance de CRM</h3>
-      <ul id="crm-highlights-list" style="margin-left: 20px; color: var(--text); line-height: 1.6; font-size: 13px;">
-        <!-- Dynamic highlights go here -->
-      </ul>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <p class="section-title" style="margin-bottom:0;">Highlights & Insights do Período Mapeado</p>
+      <div id="gemini-config-container" style="display:flex; align-items:center; gap:8px; font-size:12px;">
+        <button id="btn-config-gemini" class="cmp-btn" style="height:28px; padding:0 12px; font-size:11px; border-color:var(--border2); background:transparent; color:var(--text2); transition:all 0.2s;">⚙️ Configurar Gemini</button>
+      </div>
+    </div>
+    
+    <!-- Gemini Config Panel (hidden by default) -->
+    <div id="gemini-config-panel" style="display:none; background:var(--bg2); border:1px solid var(--border2); padding:15px; border-radius:var(--radius-lg); margin-bottom:15px;">
+      <div style="font-size:12px; margin-bottom:8px; color:var(--text2);">Para gerar insights estratégicos em tempo real com o Gemini sobre o período filtrado, insira sua chave de API abaixo. Ela será salva com segurança apenas no seu navegador (localStorage).</div>
+      <div style="display:flex; gap:10px;">
+        <input type="password" id="gemini-key-input" placeholder="Cole sua API Key do Gemini aqui (AI Studio)..." style="flex:1; background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:8px; border-radius:6px; font-size:12px; height:32px; outline:none;" />
+        <button id="btn-save-gemini" class="cmp-btn" style="height:32px; background:var(--accent); color:#000; font-weight:500; font-size:12px; border:none; padding:0 15px;">Salvar</button>
+        <button id="btn-clear-gemini" class="cmp-btn" style="height:32px; border-color:var(--border2); font-size:12px; padding:0 15px; background:transparent; color:var(--text2);">Limpar</button>
+      </div>
+    </div>
+
+    <div id="crm-highlights-grid" class="highlight-grid">
+      <!-- Dynamic cards go here -->
     </div>
 
     <div class="footer">Atualizado automaticamente a partir do GA4 · Grupo Guanabara</div>
@@ -1040,21 +1120,133 @@
         }
       });
 
-      const hList = document.getElementById('crm-highlights-list');
-      if (hList) {
+      const hGrid = document.getElementById('crm-highlights-grid');
+      if (hGrid) {
         const bestDayFmt = bestDay !== '—' ? bestDay.split('-').reverse().join('/') : '—';
         const topMidia = sortedMidias[0] || '—';
         const topMidiaRec = midiaRecMap[topMidia] || 0;
         const topMidiaPct = crmRec > 0 ? (topMidiaRec / crmRec * 100).toFixed(1) : 0;
-        
-        let html = `
-          <li style="margin-bottom: 8px;">🎯 <strong>Faturamento & Penetração:</strong> O faturamento total de CRM no período foi de <strong>${fmtR(crmRec)}</strong>, o que representa <strong>${crmRecShare.toFixed(2)}%</strong> do faturamento global (R$ ${fmtC(totalRec)}) obtido nas plataformas de venda.</li>
-          <li style="margin-bottom: 8px;">⚡ <strong>Origem Campeã:</strong> A origem/mídia que mais trouxe receita para o CRM foi <strong>${topMidia}</strong> com <strong>${fmtR(topMidiaRec)}</strong> (fração de <strong>${topMidiaPct}%</strong> das vendas do CRM).</li>
-          <li style="margin-bottom: 8px;">🤖 <strong>Disparos Automáticos vs Manuais:</strong> Automações da plataforma (Architect) somaram <strong>${fmtR(autoRec)}</strong> (<strong>${autoPct.toFixed(1)}%</strong> da receita CRM, com taxa de conversão média de <strong>${autoConv.toFixed(2)}%</strong>). Disparos manuais responderam por <strong>${manualPct.toFixed(1)}%</strong> (soma de <strong>${fmtR(manualRec)}</strong> com conversão de <strong>${manualConv.toFixed(2)}%</strong>).</li>
-          <li style="margin-bottom: 8px;">📱 <strong>Participação Site vs App:</strong> No total mapeado de CRM, as vendas em computadores/móbile via <strong>Site</strong> respondem por <strong>${siteCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(siteCrmRec)}</strong>), enquanto o tráfego via <strong>App</strong> é responsável por <strong>${appCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(appCrmRec)}</strong>).</li>
-          <li style="margin-bottom: 8px;">📅 <strong>Pico do CRM:</strong> O dia com maior pico de vendas de CRM no período selecionado foi o dia <strong>${bestDayFmt}</strong>, com receita faturada de <strong>${fmtR(bestDayRec)}</strong>.</li>
-        `;
-        hList.innerHTML = html;
+
+        function renderFallback() {
+          let html = `
+            <div class="highlight-card" style="border-left: 3px solid var(--accent);">
+              <div class="highlight-card-title">📈 Retenção & LTV</div>
+              <div class="highlight-card-num" style="color: var(--accent);">${fmtR(crmRec)}</div>
+              <div class="highlight-card-desc">Faturamento de CRM consolida uma taxa de penetração de <strong>${crmRecShare.toFixed(2)}%</strong> sobre a receita global de vendas (R$ ${fmtC(totalRec)}), comprovando alta eficiência no valor do tempo de vida do cliente (LTV) com baixo custo de aquisição.</div>
+            </div>
+            <div class="highlight-card" style="border-left: 3px solid var(--site);">
+              <div class="highlight-card-title">⚡ Eficiência de Mídia</div>
+              <div class="highlight-card-num" style="color: var(--site);">${topMidiaPct}%</div>
+              <div class="highlight-card-desc">A origem/mídia <strong>${topMidia}</strong> responde sozinha por <strong>${fmtR(topMidiaRec)}</strong> das conversões de CRM. O resultado valida este ponto de contato como a via prioritária de maior tração operacional para a base.</div>
+            </div>
+            <div class="highlight-card" style="border-left: 3px solid var(--crm);">
+              <div class="highlight-card-title">🤖 Escala & Automação</div>
+              <div class="highlight-card-num" style="color: var(--crm);">${autoConv.toFixed(2)}%</div>
+              <div class="highlight-card-desc">As réguas automáticas (Architect) registram conversão de <strong>${autoConv.toFixed(2)}%</strong> (gerando <strong>${fmtR(autoRec)}</strong>), comprovando maior maturidade e rentabilidade do tráfego automatizado vs. os disparos manuais (<strong>${manualConv.toFixed(2)}%</strong> de conv., somando <strong>${fmtR(manualRec)}</strong>).</div>
+            </div>
+            <div class="highlight-card" style="border-left: 3px solid var(--app);">
+              <div class="highlight-card-title">📱 UX & Mobile First</div>
+              <div class="highlight-card-num" style="color: var(--app);">${appCrmPct.toFixed(1)}%</div>
+              <div class="highlight-card-desc">O canal <strong>App</strong> domina a preferência de conversão da base de CRM com <strong>${appCrmPct.toFixed(1)}%</strong> de participação (<strong>${fmtR(appCrmRec)}</strong>), enquanto o <strong>Site</strong> responde por <strong>${siteCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(siteCrmRec)}</strong>), sugerindo foco em estratégias in-app.</div>
+            </div>
+            <div class="highlight-card" style="border-left: 3px solid var(--outros);">
+              <div class="highlight-card-title">📅 Elasticidade da Base</div>
+              <div class="highlight-card-num" style="color: var(--outros);">${fmtR(bestDayRec)}</div>
+              <div class="highlight-card-desc">O pico operacional do período em <strong>${bestDayFmt}</strong> atingiu <strong>${fmtR(bestDayRec)}</strong> em 24h, indicando alta sensibilidade da base própria a ofertas sazonais concentradas e grandes campanhas pontuais.</div>
+            </div>
+          `;
+          hGrid.innerHTML = html;
+        }
+
+        const key = localStorage.getItem('guanabara_gemini_key');
+        if (key) {
+          const dataIniFmt = ini ? ini.split('-').reverse().join('/') : '—';
+          const dataFimFmt = fim ? fim.split('-').reverse().join('/') : '—';
+          
+          hGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--text2); padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+              <div class="status-badge" style="animation: pulse 1.5s infinite; font-size: 13px;">🤖 Agente Gemini analisando o período de ${dataIniFmt} a ${dataFimFmt}...</div>
+              <div style="font-size: 11px; color: var(--text3);">Isso pode levar de 1 a 2 segundos</div>
+            </div>
+          `;
+
+          const prompt = `
+Você é um Diretor Executivo de CRM, Growth Marketing e Negócios Sênior com mais de 15 anos de experiência no mercado de transporte/turismo e e-commerce de passagens de ônibus.
+Sua missão é analisar os resultados de CRM consolidado do Grupo Guanabara do período selecionado de ${dataIniFmt} a ${dataFimFmt} e produzir 5 "Highlights de CRM e Negócios" estratégicos para o dashboard.
+
+Aqui estão os dados analíticos reais consolidados do período selecionado para a sua análise:
+- Faturamento Total de CRM: R$ ${crmRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+- Faturamento Global da Empresa (Guanabara): R$ ${totalRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+- Participação (Share) do CRM na receita da empresa: ${crmRecShare.toFixed(2)}%
+- Mídia Campeã do CRM: "${topMidia}" com receita de R$ ${topMidiaRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (representando ${topMidiaPct}% do faturamento CRM)
+- Desempenho de Disparos Automáticos (Jornadas do Architect):
+  * Receita: R$ ${autoRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${autoPct.toFixed(1)}% do CRM)
+  * Taxa de Conversão: ${autoConv.toFixed(2)}%
+- Desempenho de Disparos Manuais (Campanhas em Lote):
+  * Receita: R$ ${manualRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${manualPct.toFixed(1)}% do CRM)
+  * Taxa de Conversão: ${manualConv.toFixed(2)}%
+- Penetração de Canais (Site vs App no CRM):
+  * App CRM: Receita de R$ ${appCrmRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${appCrmPct.toFixed(1)}% do CRM), Conversão de ${appCrmConv.toFixed(2)}%
+  * Site CRM: Receita de R$ ${siteCrmRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${siteCrmPct.toFixed(1)}% do CRM), Conversão de ${siteCrmConv.toFixed(2)}%
+- Pico de Vendas Concentrado: Dia ${bestDayFmt} com faturamento de R$ ${bestDayRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+
+Instruções editoriais e de estilo:
+- Adote um tom de voz executivo, corporativo, estratégico e altamente experiente. Use jargões de CRM e negócios (LTV, CAC, RFM, Réguas de Relacionamento, conversão incremental, engajamento in-app, mobile first, elasticidade).
+- Cada highlight deve ter uma tese técnica de negócios baseada nos números apresentados. O número deve abrir o card de forma impactante e a descrição deve explicar o significado técnico/estratégico por trás do número em até 3 linhas de texto fluido.
+- Produza exatamente 5 cards HTML com a seguinte estrutura:
+
+<div class="highlight-card" style="border-left: 3px solid [COR];">
+  <div class="highlight-card-title">[EMOJI] [TÍTULO DO HIGH-LEVEL INSIGHT]</div>
+  <div class="highlight-card-num" style="color: [COR];">[NÚMERO GRANDE IMPACTANTE]</div>
+  <div class="highlight-card-desc">[ANÁLISE ESTRATÉGICA DO EXECUTIVO DE CRM COM ATÉ 3 LINHAS]</div>
+</div>
+
+Cores e emojis sugeridos para as bordas e títulos:
+- Card 1: 📈 Retenção & LTV (cor: var(--accent)) -> Foco na receita total de CRM e penetração de mercado.
+- Card 2: ⚡ Eficiência de Mídia (cor: var(--site)) -> Foco no canal campeão e concentração de vendas.
+- Card 3: 🤖 Escala & Automação (cor: var(--crm)) -> Foco nas réguas automáticas vs disparos em massa.
+- Card 4: 📱 UX & Mobile First (cor: var(--app)) -> Foco na preferência do App vs Site.
+- Card 5: 📅 Elasticidade da Base (cor: var(--outros)) -> Foco no dia de pico e sazonalidade.
+
+Substitua [COR] pelas variáveis CSS indicadas para cada card (ex: var(--accent), var(--site), etc.).
+Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown como \`\`\`html ou qualquer outro texto explicativo.
+`;
+
+          const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+          
+          fetch(apiURL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: prompt
+                }]
+              }]
+            })
+          })
+          .then(res => {
+            if (!res.ok) throw new Error('Falha na API do Gemini');
+            return res.json();
+          })
+          .then(data => {
+            let text = data.candidates[0].content.parts[0].text;
+            if (text.includes('```html')) {
+              text = text.split('```html')[1].split('```')[0];
+            } else if (text.includes('```')) {
+              text = text.split('```')[1].split('```')[0];
+            }
+            hGrid.innerHTML = text.trim();
+          })
+          .catch(err => {
+            console.error('Erro ao buscar insights do Gemini:', err);
+            renderFallback();
+          });
+        } else {
+          renderFallback();
+        }
       }
     }
 
@@ -1173,6 +1365,35 @@
         error: () => { document.getElementById('status-txt').textContent = 'Erro ao carregar dados'; }
       });
     }
+
+    // Event listeners para a configuração do Gemini
+    document.getElementById('btn-config-gemini').addEventListener('click', () => {
+      const panel = document.getElementById('gemini-config-panel');
+      const input = document.getElementById('gemini-key-input');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      input.value = localStorage.getItem('guanabara_gemini_key') || '';
+    });
+
+    document.getElementById('btn-save-gemini').addEventListener('click', () => {
+      const input = document.getElementById('gemini-key-input');
+      const key = input.value.trim();
+      if (key) {
+        localStorage.setItem('guanabara_gemini_key', key);
+        alert('Chave do Gemini salva com sucesso!');
+        document.getElementById('gemini-config-panel').style.display = 'none';
+        updateAll();
+      } else {
+        alert('Por favor, insira uma chave de API válida.');
+      }
+    });
+
+    document.getElementById('btn-clear-gemini').addEventListener('click', () => {
+      localStorage.removeItem('guanabara_gemini_key');
+      document.getElementById('gemini-key-input').value = '';
+      alert('Chave do Gemini removida com sucesso.');
+      document.getElementById('gemini-config-panel').style.display = 'none';
+      updateAll();
+    });
 
     resetFilters(true);
     loadData();
