@@ -37,13 +37,18 @@ jobs:
       - name: Rodar script de atualização
         run: python update_ga4.py
 
+      - name: Gerar Insights Executivos com Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python gerar_insights.py
+
       - name: Commit e Push das alterações
         run: |
           git config --global user.name "Robo Dashboard"
           git config --global user.email "robo@dashboard.com"
-          git add dados_dashboard.csv
+          git add dados_dashboard.csv insights_crm.html
           if ! git diff --quiet || ! git diff --staged --quiet; then
-            git commit -m "⚙️ Auto-update: Extraindo dados atualizados do GA4"
+            git commit -m "⚙️ Auto-update: Extraindo dados atualizados do GA4 e gerando insights de IA"
             git pull --rebase origin main
             git push origin main
           fi
