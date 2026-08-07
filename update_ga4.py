@@ -94,12 +94,9 @@ def run():
                         origem_agrupada = "Not Set"
                     elif "(direct) / (none)" in sm_lower:
                         origem_agrupada = "Direct"
-                    elif "insider" in sm_lower and "insite" in sm_lower:
-                        origem_agrupada = "Organic"
-                    elif "insider" in sm_lower or "pushnews" in sm_lower or "firebase" in sm_lower:
+                    # Regra unificada de CRM (Push, WebPush, Email, WhatsApp, Insite)
+                    elif any(k in sm_lower for k in ["insider", "pushnews", "firebase", "whatsapp", "emkt", "email", "salesforce", "zoho", "tallos", "insite"]):
                         origem_agrupada = "CRM"
-                    elif "insite" in sm_lower or "emkt" in sm_lower or "whatsapp" in sm_lower:
-                        origem_agrupada = "Others"
                     elif "cpc" in sm_lower or "display" in sm_lower or "paid" in sm_lower:
                         origem_agrupada = "Paid"
                     elif "organic" in sm_lower:
@@ -108,9 +105,6 @@ def run():
                         origem_agrupada = "Referral"
                     elif "blog" in sm_lower:
                         origem_agrupada = "Blog"
-
-                    # O nome da mídia (source_medium) será mantido o original do GA4, 
-                    # para que você possa ver exatamente quais canais formaram o grupo CRM.
 
                     csv_rows.append([
                         prop_name, date_val, source_medium, campaign,
