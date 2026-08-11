@@ -912,7 +912,7 @@
     function parseNum(s) { if (!s && s !== 0) return 0; s = String(s).trim().replace(/\s/g, ''); if (s.includes('.') && s.includes(',')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (s.includes(',') && !s.includes('.')) { s = s.replace(',', '.'); } return parseFloat(s) || 0 }
     function parseDate(d) { if (!d) return null; const s = String(d).trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) { if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` } } if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; return s }
     function isInsider(r) {
-      return isCRM(r.canal);
+      return String(r.midia || '').toLowerCase().includes('insider');
     }
     function delta(a, b) { if (b === 0) return null; return (a - b) / Math.abs(b) * 100 }
 
@@ -1461,6 +1461,7 @@
       document.getElementById('status-txt').textContent = 'Carregando...';
       Papa.parse(CSV_URL, {
         download: true, header: true, skipEmptyLines: true,
+        worker: true,
         complete: function (res) {
           const sample = res.data[0] || {};
           const K = {
