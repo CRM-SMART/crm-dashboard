@@ -8,9 +8,18 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   atualizar_dados:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
@@ -50,3 +59,15 @@ jobs:
             git pull --rebase origin main
             git push origin main
           fi
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Subir arquivos para o Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+          
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
