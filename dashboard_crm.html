@@ -530,7 +530,7 @@
 
     .highlight-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: 1fr 1fr;
       gap: 15px;
       margin-bottom: 2rem;
     }
@@ -574,19 +574,12 @@
       line-height: 1.45;
     }
 
-    @media(max-width:1024px) {
-      .highlight-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
     @media(max-width:768px) {
       .highlight-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    @media(max-width:480px) {
-      .highlight-grid {
         grid-template-columns: 1fr;
+      }
+      .highlight-card {
+        grid-column: span 1 !important;
       }
     }
     @keyframes pulse {
@@ -634,6 +627,22 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Campanhas In-App</label>
+        <select id="f-inapp">
+          <option value="with">Com In-App</option>
+          <option value="without">Sem In-App</option>
+        </select>
+      </div>
+
+      <div class="filter-group"><label>Comparar com</label>
+        <select id="f-cmp">
+          <option value="none">Sem comparativo</option>
+          <option value="wow">WoW — Semana anterior</option>
+          <option value="mom">MoM — Mês anterior</option>
+          <option value="yoy">YoY — Ano anterior</option>
+        </select>
+      </div>
+
       <div class="filter-group"><label>Buscar Campanha</label>
         <input type="text" id="f-campanha" placeholder="Digite o nome..." style="width:180px;" />
       </div>
@@ -655,6 +664,7 @@
       <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" /></div>
       <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" /></div>
       <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
+      <button type="button" class="cmp-btn" onclick="exportFilteredCSV()" style="align-self: flex-end; height: 36px; background: rgba(31, 209, 150, 0.1); border-color: var(--accent); color: var(--accent);">📥 Exportar CSV</button>
     </div>
 
     <!-- KPIs CRM -->
@@ -781,26 +791,58 @@
     <!-- Evolução -->
     <p class="section-title">Evolução de Faturamento CRM</p>
     <div class="card">
-      <h3>Evolução Diária da Receita de CRM (Automático vs Manual)</h3>
+      <h3 style="margin:0; margin-bottom: 10px;">Evolução da Receita de CRM (Automático vs Manual)</h3>
+      
+      <!-- Ajustar eixos da evolução -->
+      <details class="axis-editor" style="margin-top:10px; margin-bottom:10px; border: 1px solid var(--border2); padding: 10px; border-radius: var(--radius); background: var(--bg3);">
+        <summary style="cursor:pointer; font-size:11px; font-weight:600; color:var(--text2);">⚙️ Ajustar Limites do Eixo Y</summary>
+        <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top:8px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Mínimo (R$)</label>
+            <input id="evolRevMin" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Máximo (R$)</label>
+            <input id="evolRevMax" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
+          </div>
+          <button type="button" class="cmp-btn" id="btn-reset-evol-axis" style="height:26px; font-size:10px; padding:0 10px;">Voltar ao automático</button>
+        </div>
+      </details>
+
       <div class="legend" id="leg-crm-evolucao"></div>
-      <div style="position:relative;width:100%;height:240px"><canvas id="chart-crm-evolucao"></canvas></div>
+      <div style="position:relative;width:100%;height:260px"><canvas id="chart-crm-evolucao"></canvas></div>
     </div>
+
+
 
     <!-- Highlights -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
       <p class="section-title" style="margin-bottom:0;">Highlights & Insights do Período Mapeado</p>
       <div id="gemini-config-container" style="display:flex; align-items:center; gap:8px; font-size:12px;">
-        <button id="btn-config-gemini" class="cmp-btn" style="height:28px; padding:0 12px; font-size:11px; border-color:var(--border2); background:transparent; color:var(--text2); transition:all 0.2s;">⚙️ Configurar Gemini</button>
+        <button id="btn-trigger-update" class="cmp-btn" style="display:none; height:28px; padding:0 12px; font-size:11px; background:var(--accent); color:#000; font-weight:bold; border:none; border-radius:4px; align-items:center; gap:6px; cursor:pointer;">🔄 Atualizar Dados</button>
+        <button id="btn-config-gemini" class="cmp-btn" style="height:28px; padding:0 12px; font-size:11px; border-color:var(--border2); background:transparent; color:var(--text2); transition:all 0.2s;">⚙️ Configurações</button>
       </div>
     </div>
     
-    <!-- Gemini Config Panel (hidden by default) -->
-    <div id="gemini-config-panel" style="display:none; background:var(--bg2); border:1px solid var(--border2); padding:15px; border-radius:var(--radius-lg); margin-bottom:15px;">
-      <div style="font-size:12px; margin-bottom:8px; color:var(--text2);">Para gerar insights estratégicos em tempo real com o Gemini sobre o período filtrado, insira sua chave de API abaixo. Ela será salva com segurança apenas no seu navegador (localStorage).</div>
+    <!-- Config Panel (hidden by default) -->
+    <div id="gemini-config-panel" style="display:none; background:var(--bg2); border:1px solid var(--border2); padding:20px; border-radius:var(--radius-lg); margin-bottom:15px;">
+      <div style="font-size:14px; font-weight:bold; margin-bottom:12px; color:var(--text);">⚙️ Configurações do Dashboard</div>
+      
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:15px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; color:var(--text2); font-weight:500;">Chave de API do Gemini (IA):</label>
+          <input type="password" id="gemini-key-input" placeholder="Cole sua API Key do Gemini aqui..." style="background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:8px 12px; border-radius:6px; font-size:12px; height:36px; outline:none;" />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; color:var(--text2); font-weight:500;">Token de Acesso do GitHub (PAT para atualização manual):</label>
+          <input type="password" id="github-token-input" placeholder="Cole seu GitHub Personal Access Token (PAT) aqui..." style="background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:8px 12px; border-radius:6px; font-size:12px; height:36px; outline:none;" />
+          <div style="font-size:10px; color:var(--text3); margin-top:2px;">O token precisa ter permissão de <strong>Actions: Write</strong> no repositório. Ele fica salvo de forma 100% segura apenas no seu navegador.</div>
+        </div>
+      </div>
+      
       <div style="display:flex; gap:10px;">
-        <input type="password" id="gemini-key-input" placeholder="Cole sua API Key do Gemini aqui (AI Studio)..." style="flex:1; background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:8px; border-radius:6px; font-size:12px; height:32px; outline:none;" />
-        <button id="btn-save-gemini" class="cmp-btn" style="height:32px; background:var(--accent); color:#000; font-weight:500; font-size:12px; border:none; padding:0 15px;">Salvar</button>
-        <button id="btn-clear-gemini" class="cmp-btn" style="height:32px; border-color:var(--border2); font-size:12px; padding:0 15px; background:transparent; color:var(--text2);">Limpar</button>
+        <button id="btn-save-gemini" class="cmp-btn" style="height:34px; background:var(--accent); color:#000; font-weight:500; font-size:12px; border:none; padding:0 20px; border-radius:6px; cursor:pointer;">Salvar Configurações</button>
+        <button id="btn-clear-gemini" class="cmp-btn" style="height:34px; border-color:var(--border2); font-size:12px; padding:0 20px; background:transparent; color:var(--text2); border-radius:6px; cursor:pointer;">Limpar Tudo</button>
       </div>
     </div>
 
@@ -819,6 +861,48 @@
     const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
     const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
     let rawData = [], charts = {}, maxDate = '';
+
+    function parseLocal(s) {
+      if (!s) return new Date();
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function iso(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function getPeriodB_Dates(ini, fim, preset) {
+      if (!preset || preset === 'none') return null;
+      const d1 = new Date(ini), d2 = new Date(fim);
+      let bIni, bFim;
+      if (preset === 'yoy') {
+        const y1 = new Date(d1); y1.setUTCFullYear(y1.getUTCFullYear() - 1);
+        const y2 = new Date(d2); y2.setUTCFullYear(y2.getUTCFullYear() - 1);
+        bIni = y1.toISOString().slice(0, 10); bFim = y2.toISOString().slice(0, 10);
+      } else if (preset === 'mom') {
+        const subMonth = d => {
+          const date = new Date(d);
+          const day = date.getUTCDate();
+          date.setUTCMonth(date.getUTCMonth() - 1);
+          if (date.getUTCDate() !== day) date.setUTCDate(0);
+          return date;
+        };
+        const m1 = subMonth(d1);
+        const m2 = subMonth(d2);
+        bIni = m1.toISOString().slice(0, 10); bFim = m2.toISOString().slice(0, 10);
+      } else if (preset === 'wow') {
+        const w1 = new Date(d1); w1.setUTCDate(w1.getUTCDate() - 7);
+        const w2 = new Date(d2); w2.setUTCDate(w2.getUTCDate() - 7);
+        bIni = w1.toISOString().slice(0, 10); bFim = w2.toISOString().slice(0, 10);
+      }
+      return { bIni, bFim };
+    }
+    function delta(a, b) { if (b === 0) return null; return (a - b) / Math.abs(b) * 100 }
+    function isRowInApp(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('insite') || sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
+             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app') || cmp.includes('insite');
+    }
 
     function isCRM(canal) { return String(canal).toUpperCase() === 'CRM' }
     function isAutomated(r) {
@@ -872,6 +956,12 @@
         crmBase = crmBase.filter(r => !isAutomated(r));
       }
 
+      // Filtro In-App
+      const inappMode = document.getElementById('f-inapp').value;
+      if (inappMode === 'without') {
+        crmBase = crmBase.filter(r => !isRowInApp(r));
+      }
+
       // 4. Apply Busca de Campanha filter
       if (campanhaBusca) {
         crmBase = crmBase.filter(r => {
@@ -895,27 +985,85 @@
         const selSet = new Set(window.selectedOrigens);
         data = crmBase.filter(r => selSet.has(r.midia));
       }
+      window.currentFilteredData = data;
 
-      // Calculate CRM KPIs
-      const crmRec = data.reduce((a, r) => a + r.receita, 0);
-      const crmSess = data.reduce((a, r) => a + r.sessoes, 0);
-      const crmTrans = data.reduce((a, r) => a + r.trans, 0);
-      const crmConv = crmSess > 0 ? (crmTrans / crmSess * 100) : 0;
-      const crmTicket = crmTrans > 0 ? (crmRec / crmTrans) : 0;
+      // Obter filtro de comparativo
+      const cmp = document.getElementById('f-cmp').value;
+
+      // Calculate CRM KPIs Period A
+      const calcKPIs = (dbase, dfilt) => {
+        const totR_base = dbase.reduce((a, r) => a + r.receita, 0);
+        const rec = dfilt.reduce((a, r) => a + r.receita, 0);
+        const sess = dfilt.reduce((a, r) => a + r.sessoes, 0);
+        const trans = dfilt.reduce((a, r) => a + r.trans, 0);
+        const conv = sess > 0 ? trans / sess * 100 : 0;
+        const share = totR_base > 0 ? rec / totR_base * 100 : 0;
+        const tkt = trans > 0 ? rec / trans : 0;
+        return { rec, sess, trans, conv, share, tkt };
+      };
+
+      const kpiA = calcKPIs(dataBase, data);
       
-      const crmRecShare = totalRec > 0 ? (crmRec / totalRec * 100) : 0;
+      const crmRec = kpiA.rec;
+      const crmSess = kpiA.sess;
+      const crmTrans = kpiA.trans;
+      const crmConv = kpiA.conv;
+      const crmTicket = kpiA.tkt;
+      const crmRecShare = kpiA.share;
       const crmSessShare = totalSess > 0 ? (crmSess / totalSess * 100) : 0;
       const crmTransShare = totalTrans > 0 ? (crmTrans / totalTrans * 100) : 0;
 
-      // Update CRM KPIs
-      document.getElementById('k-crm-receita').innerHTML = fmtR(crmRec);
+      let kpiB = null;
+      if (cmp !== 'none') {
+        const bDates = getPeriodB_Dates(ini, fim, cmp);
+        if (bDates) {
+          const dataBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv);
+          
+          let crmBaseB = dataBaseB.filter(r => isCRM(r.canal));
+          if (inappMode === 'without') {
+            crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
+          }
+          if (disparo === 'auto') {
+            crmBaseB = crmBaseB.filter(r => isAutomated(r));
+          } else if (disparo === 'manual') {
+            crmBaseB = crmBaseB.filter(r => !isAutomated(r));
+          }
+          if (campanhaBusca) {
+            crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
+          }
+          
+          let dataB = crmBaseB;
+          if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+            const selSet = new Set(window.selectedOrigens);
+            dataB = crmBaseB.filter(r => selSet.has(r.midia));
+          }
+          
+          kpiB = calcKPIs(dataBaseB, dataB);
+        }
+      }
+
+      // Update CRM KPIs with dynamic delta comparison
+      const setKpi = (id, val, fmtFn, key, kb) => {
+        const el = document.getElementById(id); if (!el) return;
+        let html = fmtFn(val);
+        if (kb && kb[key] !== undefined) {
+          const d = delta(val, kb[key]);
+          if (d !== null) {
+            const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : 'neu';
+            html += `<span class="kpi-delta ${cls}">${d > 0 ? '+' : ''}${d.toFixed(1)}%</span>`;
+          }
+        }
+        el.innerHTML = html;
+      };
+
+      setKpi('k-crm-receita', crmRec, fmtR, 'rec', kpiB);
       document.getElementById('s-crm-receita').innerHTML = `${crmRecShare.toFixed(2)}% do faturamento total`;
-      document.getElementById('k-crm-sessoes').innerHTML = fmt(crmSess);
+      setKpi('k-crm-sessoes', crmSess, fmt, 'sess', kpiB);
       document.getElementById('s-crm-sessoes').innerHTML = `${crmSessShare.toFixed(2)}% do tráfego total`;
-      document.getElementById('k-crm-transacoes').innerHTML = fmt(crmTrans);
+      setKpi('k-crm-transacoes', crmTrans, fmt, 'trans', kpiB);
       document.getElementById('s-crm-transacoes').innerHTML = `${crmTransShare.toFixed(2)}% das transações totais`;
-      document.getElementById('k-crm-conversao').innerHTML = crmConv > 0 ? crmConv.toFixed(2) + '%' : '—';
-      document.getElementById('k-crm-ticket').innerHTML = crmTicket > 0 ? fmtR(crmTicket) : '—';
+      setKpi('k-crm-conversao', crmConv, v => v > 0 ? v.toFixed(2) + '%' : '—', 'conv', kpiB);
+      setKpi('k-crm-ticket', crmTicket, v => v > 0 ? fmtR(v) : '—', 'tkt', kpiB);
 
       // --- Site vs App in CRM ---
       const siteCrmData = data.filter(r => r.pdv === 'Site');
@@ -1084,31 +1232,132 @@
         }
       }
 
-      // --- Evolução Diária da Receita de CRM Chart ---
-      const crmDatesMap = {};
-      data.forEach(r => {
-        if (!crmDatesMap[r.date]) crmDatesMap[r.date] = { auto: 0, manual: 0 };
-        const isAuto = isAutomated(r);
-        if (isAuto) crmDatesMap[r.date].auto += r.receita;
-        else crmDatesMap[r.date].manual += r.receita;
-      });
-      const crmDates = Object.keys(crmDatesMap).sort();
-      const autoEvol = crmDates.map(d => Math.round(crmDatesMap[d].auto));
-      const manualEvol = crmDates.map(d => Math.round(crmDatesMap[d].manual));
+      const customMinEvol = document.getElementById('evolRevMin').value !== "" ? Number(document.getElementById('evolRevMin').value) : undefined;
+      const customMaxEvol = document.getElementById('evolRevMax').value !== "" ? Number(document.getElementById('evolRevMax').value) : undefined;
 
-      dc('crm-evolucao');
-      leg('leg-crm-evolucao', [{color: C.crm, label: 'Automático (Architect)'}, {color: '#4b8ef5', label: 'Manual (Campanhas)'}]);
-      charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
-        type: 'line',
-        data: {
-          labels: crmDates,
-          datasets: [
-            { label: 'Automático', data: autoEvol, borderColor: C.crm, backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-            { label: 'Manual', data: manualEvol, borderColor: '#4b8ef5', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
-          ]
-        },
-        options: lineOpts(v => fmtC(v))
-      });
+      // Renderização do gráfico de evolução dependendo se há comparativo ou não
+      if (cmp === 'none') {
+        const crmDatesMap = {};
+        data.forEach(r => {
+          if (!crmDatesMap[r.date]) crmDatesMap[r.date] = { auto: 0, manual: 0 };
+          const isAuto = isAutomated(r);
+          if (isAuto) crmDatesMap[r.date].auto += r.receita;
+          else crmDatesMap[r.date].manual += r.receita;
+        });
+        const crmDates = Object.keys(crmDatesMap).sort();
+        const autoEvol = crmDates.map(d => Math.round(crmDatesMap[d].auto));
+        const manualEvol = crmDates.map(d => Math.round(crmDatesMap[d].manual));
+        
+        dc('crm-evolucao');
+        leg('leg-crm-evolucao', [{color: C.crm, label: 'Automático (Architect)'}, {color: '#4b8ef5', label: 'Manual (Campanhas)'}]);
+        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+          type: 'line',
+          data: {
+            labels: crmDates.map(d => parseLocal(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})),
+            datasets: [
+              { label: 'Automático', data: autoEvol, borderColor: C.crm, backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+              { label: 'Manual', data: manualEvol, borderColor: '#4b8ef5', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtC(ctx.raw)}` } } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
+              y: { min: customMinEvol, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
+            }
+          }
+        });
+      } else {
+        const bDates = getPeriodB_Dates(ini, fim, cmp);
+        
+        const getDailyCrm = (dList, startD, endD) => {
+          const map = {};
+          dList.forEach(r => {
+            map[r.date] = (map[r.date] || 0) + r.receita;
+          });
+          const datesList = [];
+          let curr = new Date(startD);
+          const endLimit = new Date(endD);
+          while (curr <= endLimit) {
+            datesList.push(curr.toISOString().slice(0, 10));
+            curr.setDate(curr.getDate() + 1);
+          }
+          return {
+            labels: datesList.map(d => parseLocal(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})),
+            data: datesList.map(d => Math.round(map[d] || 0))
+          };
+        };
+
+        const resA = getDailyCrm(data, ini, fim);
+        
+        // Buscar dadosB aplicando os mesmos filtros
+        let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
+        if (inappMode === 'without') {
+          crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
+        }
+        if (disparo === 'auto') {
+          crmBaseB = crmBaseB.filter(r => isAutomated(r));
+        } else if (disparo === 'manual') {
+          crmBaseB = crmBaseB.filter(r => !isAutomated(r));
+        }
+        if (campanhaBusca) {
+          crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
+        }
+        let dataB = crmBaseB;
+        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+          const selSet = new Set(window.selectedOrigens);
+          dataB = crmBaseB.filter(r => selSet.has(r.midia));
+        }
+        
+        const resB = getDailyCrm(dataB, bDates.bIni, bDates.bFim);
+
+        dc('crm-evolucao');
+        const labelA = 'Período Atual';
+        const labelB = cmp === 'wow' ? 'Semana Anterior' : cmp === 'mom' ? 'Mês Anterior' : 'Ano Anterior';
+        
+        leg('leg-crm-evolucao', [{color: '#1fd196', label: labelA}, {color: '#8a8e96', label: labelB}]);
+        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+          type: 'line',
+          data: {
+            labels: resA.labels,
+            datasets: [
+              { label: labelA, data: resA.data, borderColor: '#1fd196', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+              { label: labelB, data: resB.data, borderColor: '#8a8e96', borderDash: [5, 5], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtC(ctx.raw)}` } } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
+              y: { min: customMinEvol, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
+            }
+          }
+        });
+      }
+
+      // --- Listeners de Editores de Eixo e Filtros ---
+      if (!window.listenersInitialized) {
+        document.querySelectorAll('.axis-editor input').forEach(input => {
+          input.addEventListener('input', updateAll);
+        });
+
+        document.getElementById('btn-reset-evol-axis').addEventListener('click', () => {
+          document.getElementById('evolRevMin').value = '';
+          document.getElementById('evolRevMax').value = '';
+          updateAll();
+        });
+
+        document.getElementById('f-inapp').addEventListener('change', updateAll);
+        document.getElementById('f-cmp').addEventListener('change', updateAll);
+
+        window.listenersInitialized = true;
+      }
 
       // Highlights
       let bestDay = '—', bestDayRec = 0;
@@ -1120,39 +1369,46 @@
         }
       });
 
-      const hGrid = document.getElementById('crm-highlights-grid');
-      if (hGrid) {
-        const bestDayFmt = bestDay !== '—' ? bestDay.split('-').reverse().join('/') : '—';
-        const topMidia = sortedMidias[0] || '—';
-        const topMidiaRec = midiaRecMap[topMidia] || 0;
-        const topMidiaPct = crmRec > 0 ? (topMidiaRec / crmRec * 100).toFixed(1) : 0;
+      if (data.length === 0) {
+        hGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text3); padding: 40px;">Nenhum dado de CRM disponível para o período e filtros selecionados.</div>`;
+        return;
+      }
 
         function renderFallback() {
+          const bestDayFmt = bestDay !== '—' ? bestDay.split('-').reverse().join('/') : '—';
+          const topMidia = sortedMidias[0] || '—';
+          const topMidiaRec = midiaRecMap[topMidia] || 0;
+          const topMidiaPct = crmRec > 0 ? (topMidiaRec / crmRec * 100).toFixed(1) : 0;
+          
           let html = `
-            <div class="highlight-card" style="border-left: 3px solid var(--accent);">
-              <div class="highlight-card-title">📈 Retenção & LTV</div>
-              <div class="highlight-card-num" style="color: var(--accent);">${fmtR(crmRec)}</div>
-              <div class="highlight-card-desc">Faturamento de CRM consolida uma taxa de penetração de <strong>${crmRecShare.toFixed(2)}%</strong> sobre a receita global de vendas (R$ ${fmtC(totalRec)}), comprovando alta eficiência no valor do tempo de vida do cliente (LTV) com baixo custo de aquisição.</div>
+            <div class="highlight-card" style="border-left: 3px solid var(--accent); grid-column: span 1;">
+              <div class="highlight-card-title">📈 Retenção & LTV: Penetração de Receita</div>
+              <div class="highlight-card-num" style="color: var(--accent); font-size: 20px;">${fmtR(crmRec)} (${crmRecShare.toFixed(2)}% Share)</div>
+              <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
+                O faturamento de CRM representa uma taxa de penetração de <strong>${crmRecShare.toFixed(2)}%</strong> sobre a receita global de vendas da Guanabara (R$ ${fmtC(totalRec)}). Isso indica que a base de clientes recorrentes possui alta representatividade, gerando receitas com baixo custo de aquisição.
+                <br><br>
+                <strong>🎯 Ação Recomendada:</strong> Ampliar campanhas de remarketing para usuários que realizaram a última compra há mais de 60 dias (estratégia Winback) para acelerar a recompra.
+              </div>
             </div>
-            <div class="highlight-card" style="border-left: 3px solid var(--site);">
-              <div class="highlight-card-title">⚡ Eficiência de Mídia</div>
-              <div class="highlight-card-num" style="color: var(--site);">${topMidiaPct}%</div>
-              <div class="highlight-card-desc">A origem/mídia <strong>${topMidia}</strong> responde sozinha por <strong>${fmtR(topMidiaRec)}</strong> das conversões de CRM. O resultado valida este ponto de contato como a via prioritária de maior tração operacional para a base.</div>
+            
+            <div class="highlight-card" style="border-left: 3px solid var(--app); grid-column: span 1;">
+              <div class="highlight-card-title">📱 UX & Mobile: Eficiência do Canal App</div>
+              <div class="highlight-card-num" style="color: var(--app); font-size: 20px;">${appCrmPct.toFixed(1)}% Share no CRM</div>
+              <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
+                O canal <strong>App</strong> é responsável por <strong>${appCrmPct.toFixed(1)}%</strong> da receita de CRM (<strong>${fmtR(appCrmRec)}</strong>) com conversão média de <strong>${appCrmConv.toFixed(2)}%</strong>. A performance no App supera a conversão do <strong>Site</strong> (<strong>${siteCrmPct.toFixed(1)}%</strong> de share, conversão de <strong>${siteCrmConv.toFixed(2)}%</strong>).
+                <br><br>
+                <strong>🎯 Ação Recomendada:</strong> Implementar incentivos de desconto exclusivo in-app nas comunicações enviadas via web, visando migrar o tráfego qualificado do Site para o App.
+              </div>
             </div>
-            <div class="highlight-card" style="border-left: 3px solid var(--crm);">
-              <div class="highlight-card-title">🤖 Escala & Automação</div>
-              <div class="highlight-card-num" style="color: var(--crm);">${autoConv.toFixed(2)}%</div>
-              <div class="highlight-card-desc">As réguas automáticas (Architect) registram conversão de <strong>${autoConv.toFixed(2)}%</strong> (gerando <strong>${fmtR(autoRec)}</strong>), comprovando maior maturidade e rentabilidade do tráfego automatizado vs. os disparos manuais (<strong>${manualConv.toFixed(2)}%</strong> de conv., somando <strong>${fmtR(manualRec)}</strong>).</div>
-            </div>
-            <div class="highlight-card" style="border-left: 3px solid var(--app);">
-              <div class="highlight-card-title">📱 UX & Mobile First</div>
-              <div class="highlight-card-num" style="color: var(--app);">${appCrmPct.toFixed(1)}%</div>
-              <div class="highlight-card-desc">O canal <strong>App</strong> domina a preferência de conversão da base de CRM com <strong>${appCrmPct.toFixed(1)}%</strong> de participação (<strong>${fmtR(appCrmRec)}</strong>), enquanto o <strong>Site</strong> responde por <strong>${siteCrmPct.toFixed(1)}%</strong> (<strong>${fmtR(siteCrmRec)}</strong>), sugerindo foco em estratégias in-app.</div>
-            </div>
-            <div class="highlight-card" style="border-left: 3px solid var(--outros);">
-              <div class="highlight-card-title">📅 Elasticidade da Base</div>
-              <div class="highlight-card-num" style="color: var(--outros);">${fmtR(bestDayRec)}</div>
-              <div class="highlight-card-desc">O pico operacional do período em <strong>${bestDayFmt}</strong> atingiu <strong>${fmtR(bestDayRec)}</strong> em 24h, indicando alta sensibilidade da base própria a ofertas sazonais concentradas e grandes campanhas pontuais.</div>
+            
+            <div class="highlight-card" style="border-left: 3px solid var(--crm); grid-column: span 2;">
+              <div class="highlight-card-title">🤖 Automação: Alavanca de Escala no Architect</div>
+              <div class="highlight-card-num" style="color: var(--crm); font-size: 20px;">${autoConv.toFixed(2)}% de Conversão vs. ${manualConv.toFixed(2)}% Manual</div>
+              <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
+                As réguas automáticas (Architect) registram uma taxa de conversão média de <strong>${autoConv.toFixed(2)}%</strong> contra apenas <strong>${manualConv.toFixed(2)}%</strong> dos disparos manuais em lote. Atualmente, a automação responde por <strong>${autoPct.toFixed(1)}%</strong> (<strong>${fmtR(autoRec)}</strong>) do total CRM, indicando que a eficiência das jornadas está sendo subutilizada em relação aos disparos manuais (<strong>${manualPct.toFixed(1)}%</strong> share).
+                <br><br>
+                <strong>🎯 Ação Recomendada:</strong> Priorizar o desenvolvimento de novas jornadas automáticas de abandono de carrinho, pesquisa de destino e boas-vindas para capturar o tráfego ocioso com maior ROI e escalabilidade.
+              </div>
             </div>
           `;
           hGrid.innerHTML = html;
@@ -1166,50 +1422,51 @@
           hGrid.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; color: var(--text2); padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
               <div class="status-badge" style="animation: pulse 1.5s infinite; font-size: 13px;">🤖 Agente Gemini analisando o período de ${dataIniFmt} a ${dataFimFmt}...</div>
-              <div style="font-size: 11px; color: var(--text3);">Isso pode levar de 1 a 2 segundos</div>
+              <div style="font-size: 11px; color: var(--text3);">Isso pode levar de 2 a 3 segundos</div>
             </div>
           `;
 
+          // Gerar CSV compacto com o subset filtrado
+          const compactCSV = data.slice(0, 300).map(r => `${r.date},${r.pdv},${r.midia},${r.campanha.replace(/,/g, ' ')},${r.sessoes},${r.trans},${r.receita}`).join('\n');
+
           const prompt = `
 Você é um Diretor Executivo de CRM, Growth Marketing e Negócios Sênior com mais de 15 anos de experiência no mercado de transporte/turismo e e-commerce de passagens de ônibus.
-Sua missão é analisar os resultados de CRM consolidado do Grupo Guanabara do período selecionado de ${dataIniFmt} a ${dataFimFmt} e produzir 5 "Highlights de CRM e Negócios" estratégicos para o dashboard.
+Sua missão é analisar o comportamento dos dados reais de CRM do Grupo Guanabara do período selecionado de ${dataIniFmt} a ${dataFimFmt} e criar um relatório de **insights de negócios profundos, lógicas de crescimento e recomendações práticas fora da caixa**.
 
-Aqui estão os dados analíticos reais consolidados do período selecionado para a sua análise:
-- Faturamento Total de CRM: R$ ${crmRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-- Faturamento Global da Empresa (Guanabara): R$ ${totalRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-- Participação (Share) do CRM na receita da empresa: ${crmRecShare.toFixed(2)}%
-- Mídia Campeã do CRM: "${topMidia}" com receita de R$ ${topMidiaRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (representando ${topMidiaPct}% do faturamento CRM)
-- Desempenho de Disparos Automáticos (Jornadas do Architect):
-  * Receita: R$ ${autoRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${autoPct.toFixed(1)}% do CRM)
-  * Taxa de Conversão: ${autoConv.toFixed(2)}%
-- Desempenho de Disparos Manuais (Campanhas em Lote):
-  * Receita: R$ ${manualRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${manualPct.toFixed(1)}% do CRM)
-  * Taxa de Conversão: ${manualConv.toFixed(2)}%
-- Penetração de Canais (Site vs App no CRM):
-  * App CRM: Receita de R$ ${appCrmRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${appCrmPct.toFixed(1)}% do CRM), Conversão de ${appCrmConv.toFixed(2)}%
-  * Site CRM: Receita de R$ ${siteCrmRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} (${siteCrmPct.toFixed(1)}% do CRM), Conversão de ${siteCrmConv.toFixed(2)}%
-- Pico de Vendas Concentrado: Dia ${bestDayFmt} com faturamento de R$ ${bestDayRec.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+Não faça apenas resumos de números óbvios ("faturamento foi X"). Queremos análises cruzadas estratégicas: correlações entre canais, gargalos de conversão, oportunidades de otimização de custos de disparo, alavancas de crescimento de receita incremental e sugestões práticas de testes A/B ou novas jornadas.
 
-Instruções editoriais e de estilo:
-- Adote um tom de voz executivo, corporativo, estratégico e altamente experiente. Use jargões de CRM e negócios (LTV, CAC, RFM, Réguas de Relacionamento, conversão incremental, engajamento in-app, mobile first, elasticidade).
-- Cada highlight deve ter uma tese técnica de negócios baseada nos números apresentados. O número deve abrir o card de forma impactante e a descrição deve explicar o significado técnico/estratégico por trás do número em até 3 linhas de texto fluido.
-- Produza exatamente 5 cards HTML com a seguinte estrutura:
+Aqui estão os dados brutos de CRM consolidados do período selecionado em formato CSV (Data, Ponto_de_Venda, Midia, Campanha, Sessoes, Transacoes, Receita):
+Data,Ponto_de_Venda,Midia,Campanha,Sessoes,Transacoes,Receita
+${compactCSV}
 
-<div class="highlight-card" style="border-left: 3px solid [COR];">
-  <div class="highlight-card-title">[EMOJI] [TÍTULO DO HIGH-LEVEL INSIGHT]</div>
-  <div class="highlight-card-num" style="color: [COR];">[NÚMERO GRANDE IMPACTANTE]</div>
-  <div class="highlight-card-desc">[ANÁLISE ESTRATÉGICA DO EXECUTIVO DE CRM COM ATÉ 3 LINHAS]</div>
+Diretrizes da Análise:
+1. **Lógica de Alavancagem Comercial (Exclusivo):** Encontre uma oportunidade matemática de aumento de receita (ex: se migrarmos X% das sessões do canal Y que converte a A% para o canal Z que converte a B%, teremos um ganho incremental de R$ C). Mostre a conta rápida e a lógica!
+2. **Gargalos e UX Leaks:** Identifique disparidades de performance (ex: campanhas com alto volume de tráfego mas conversão criticamente baixa, sugerindo fadiga de base, quebra de expectativa no checkout ou falha técnica).
+3. **Eficiência de Canal e Custo de Mensageria:** Avalie a performance técnica dos canais (ex: apppush vs email vs whatsapp, se houver). Discuta a relação entre volume de disparos/conversão e custo-benefício.
+4. **Descobertas Fora da Caixa:** Encontre padrões ocultos na variação diária (ex: se finais de semana performam melhor no App, comportamento de campanhas automáticas versus pontuais de feriado).
+
+Retorne exatamente 3 ou 4 cards HTML no seguinte formato premium. Os títulos dos cards devem ser chamativos e orientados à ação (ex: "Alavanca de Crescimento: Otimização de Jornadas de Carrinho"). A descrição deve conter o raciocínio estratégico detalhado de negócios com a fundamentação matemática:
+
+<div class="highlight-card" style="border-left: 3px solid [COR]; grid-column: span 1;">
+  <div class="highlight-card-title">[EMOJI] [TÍTULO ESTRATÉGICO]</div>
+  <div class="highlight-card-num" style="color: [COR]; font-size: 20px;">[KPI DE ALAVANCA OU MÉTRICA DE SUSTENTAÇÃO]</div>
+  <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
+    [DIAGNÓSTICO TÉCNICO E FUNDAMENTAÇÃO MATEMÁTICA DA OPORTUNIDADE]
+    <br><br>
+    <strong>🎯 Ação Recomendada:</strong> [SUGESTÃO PRÁTICA E FORA DA CAIXA DE CAMPANHA, TESTE A/B OU AJUSTE DE RÉGUA]
+  </div>
 </div>
 
-Cores e emojis sugeridos para as bordas e títulos:
-- Card 1: 📈 Retenção & LTV (cor: var(--accent)) -> Foco na receita total de CRM e penetração de mercado.
-- Card 2: ⚡ Eficiência de Mídia (cor: var(--site)) -> Foco no canal campeão e concentração de vendas.
-- Card 3: 🤖 Escala & Automação (cor: var(--crm)) -> Foco nas réguas automáticas vs disparos em massa.
-- Card 4: 📱 UX & Mobile First (cor: var(--app)) -> Foco na preferência do App vs Site.
-- Card 5: 📅 Elasticidade da Base (cor: var(--outros)) -> Foco no dia de pico e sazonalidade.
+Nota: Para os cards que necessitam de mais espaço lateral (como a Lógica de Alavancagem Comercial), você pode usar o estilo "grid-column: span 2;" para que ele ocupe a largura total do grid de 2 colunas! O ideal é gerar 2 cards menores de "span 1" e 1 ou 2 cards maiores de "span 2".
 
-Substitua [COR] pelas variáveis CSS indicadas para cada card (ex: var(--accent), var(--site), etc.).
-Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown como \`\`\`html ou qualquer outro texto explicativo.
+Cores disponíveis para usar no estilo (substitua [COR] pelas variáveis CSS do tema):
+- Verde: var(--accent)
+- Roxo: var(--site)
+- Verde-água: var(--crm)
+- Laranja: var(--app)
+- Azul: var(--outros)
+
+Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown como \`\`\`html ou qualquer outro texto explicativo antes ou depois.
 `;
 
           const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
@@ -1277,6 +1534,43 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
       if (!initialLoad) {
         updateAll();
       }
+    }
+
+    function exportFilteredCSV() {
+      if (!window.currentFilteredData || window.currentFilteredData.length === 0) {
+        alert("Nenhum dado disponível para exportação no período selecionado.");
+        return;
+      }
+      const pdv = document.getElementById('f-pdv').value || 'Todos_PDVs';
+      const ini = document.getElementById('f-inicio').value || 'inicio';
+      const fim = document.getElementById('f-fim').value || 'fim';
+      
+      const headers = ["Ponto de Venda", "Data", "Origem / mídia da sessão", "Campanha da sessão", "Sessões", "Transações", "Receita", "Origem Agrupada"];
+      let csvContent = headers.join(",") + "\n";
+      
+      const rows = window.currentFilteredData.map(r => {
+        return [
+          `"${r.pdv}"`,
+          `"${r.date}"`,
+          `"${(r.midia || '').replace(/"/g, '""')}"`,
+          `"${(r.campanha || '').replace(/"/g, '""')}"`,
+          r.sessoes || 0,
+          r.trans || 0,
+          r.receita || 0,
+          `"${r.canal || ''}"`
+        ].join(",");
+      });
+      
+      csvContent += rows.join("\n");
+      
+      const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `dados_guanabara_crm_${pdv}_${ini}_a_${fim}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     // Event listeners
@@ -1366,34 +1660,154 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
       });
     }
 
-    // Event listeners para a configuração do Gemini
+    // Event listeners para a configuração do Gemini e Atualização Manual
+    const panel = document.getElementById('gemini-config-panel');
+    const keyInput = document.getElementById('gemini-key-input');
+    const ghTokenInput = document.getElementById('github-token-input');
+    const btnTriggerUpdate = document.getElementById('btn-trigger-update');
+
+    // Carregar valores do localStorage ao carregar a página
+    if (localStorage.getItem('github_actions_token')) {
+      btnTriggerUpdate.style.display = 'inline-flex';
+    }
+
     document.getElementById('btn-config-gemini').addEventListener('click', () => {
-      const panel = document.getElementById('gemini-config-panel');
-      const input = document.getElementById('gemini-key-input');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      input.value = localStorage.getItem('guanabara_gemini_key') || '';
+      keyInput.value = localStorage.getItem('guanabara_gemini_key') || '';
+      ghTokenInput.value = localStorage.getItem('github_actions_token') || '';
     });
 
     document.getElementById('btn-save-gemini').addEventListener('click', () => {
-      const input = document.getElementById('gemini-key-input');
-      const key = input.value.trim();
-      if (key) {
-        localStorage.setItem('guanabara_gemini_key', key);
-        alert('Chave do Gemini salva com sucesso!');
-        document.getElementById('gemini-config-panel').style.display = 'none';
-        updateAll();
+      const key = keyInput.value.trim();
+      const token = ghTokenInput.value.trim();
+      
+      localStorage.setItem('guanabara_gemini_key', key);
+      localStorage.setItem('github_actions_token', token);
+      
+      if (token) {
+        btnTriggerUpdate.style.display = 'inline-flex';
       } else {
-        alert('Por favor, insira uma chave de API válida.');
+        btnTriggerUpdate.style.display = 'none';
       }
+      
+      alert('Configurações salvas com sucesso!');
+      panel.style.display = 'none';
+      updateAll();
     });
 
     document.getElementById('btn-clear-gemini').addEventListener('click', () => {
       localStorage.removeItem('guanabara_gemini_key');
-      document.getElementById('gemini-key-input').value = '';
-      alert('Chave do Gemini removida com sucesso.');
-      document.getElementById('gemini-config-panel').style.display = 'none';
+      localStorage.removeItem('github_actions_token');
+      keyInput.value = '';
+      ghTokenInput.value = '';
+      btnTriggerUpdate.style.display = 'none';
+      alert('Configurações removidas.');
+      panel.style.display = 'none';
       updateAll();
     });
+
+    // Lógica de Atualização Manual via GitHub API
+    let pollingInterval = null;
+    if (btnTriggerUpdate) {
+      btnTriggerUpdate.addEventListener('click', async () => {
+        const token = localStorage.getItem('github_actions_token');
+        if (!token) {
+          alert('Por favor, configure o Token de Acesso do GitHub primeiro clicando em Configurações.');
+          return;
+        }
+        
+        btnTriggerUpdate.disabled = true;
+        btnTriggerUpdate.textContent = '⏳ Disparando...';
+        document.getElementById('status-txt').textContent = 'Disparando no GitHub...';
+        document.getElementById('status-txt').style.animation = 'pulse 1.5s infinite';
+
+        const url = 'https://api.github.com/repos/CRM-SMART/crm-dashboard/actions/workflows/daily_update.yml/dispatches';
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': `Bearer ${token}`,
+              'X-GitHub-Api-Version': '2022-11-28',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ref: 'main' })
+          });
+
+          if (response.status === 204) {
+            btnTriggerUpdate.textContent = '⏳ Executando...';
+            document.getElementById('status-txt').textContent = 'Fila do GitHub...';
+            startPollingUpdate(token);
+          } else {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || `Código HTTP ${response.status}`);
+          }
+        } catch (err) {
+          alert('Falha ao disparar atualização: ' + err.message + '\n\nVerifique se o token do GitHub está correto e tem permissão no repositório.');
+          btnTriggerUpdate.disabled = false;
+          btnTriggerUpdate.textContent = '🔄 Atualizar Dados';
+          document.getElementById('status-txt').textContent = 'Atualizado';
+          document.getElementById('status-txt').style.animation = 'none';
+        }
+      });
+    }
+
+    function startPollingUpdate(token) {
+      if (pollingInterval) clearInterval(pollingInterval);
+      
+      let attempts = 0;
+      pollingInterval = setInterval(async () => {
+        attempts++;
+        if (attempts > 30) {
+          clearInterval(pollingInterval);
+          alert('O tempo de atualização esgotou. Verifique o status das execuções diretamente no GitHub Actions.');
+          btnTriggerUpdate.disabled = false;
+          btnTriggerUpdate.textContent = '🔄 Atualizar Dados';
+          document.getElementById('status-txt').textContent = 'Atualizado';
+          document.getElementById('status-txt').style.animation = 'none';
+          return;
+        }
+
+        try {
+          const url = 'https://api.github.com/repos/CRM-SMART/crm-dashboard/actions/runs?workflow=daily_update.yml&per_page=1';
+          const res = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github+json'
+            }
+          });
+          const data = await res.json();
+          const run = data.workflow_runs && data.workflow_runs[0];
+          
+          if (run) {
+            const status = run.status;
+            const conclusion = run.conclusion;
+            
+            if (status === 'queued') {
+              document.getElementById('status-txt').textContent = 'Fila do GitHub...';
+            } else if (status === 'in_progress') {
+              document.getElementById('status-txt').textContent = 'Extraindo GA4...';
+            } else if (status === 'completed') {
+              clearInterval(pollingInterval);
+              if (conclusion === 'success') {
+                document.getElementById('status-txt').textContent = 'Sucesso! Recarregando...';
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              } else {
+                alert('O robô do GitHub falhou ao rodar a atualização. Verifique os logs no GitHub.');
+                btnTriggerUpdate.disabled = false;
+                btnTriggerUpdate.textContent = '🔄 Atualizar Dados';
+                document.getElementById('status-txt').textContent = 'Erro ao Atualizar';
+                document.getElementById('status-txt').style.animation = 'none';
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao verificar status:', e);
+        }
+      }, 10000);
+    }
 
     resetFilters(true);
     loadData();
