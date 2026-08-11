@@ -587,6 +587,31 @@
       50% { opacity: 1; }
       100% { opacity: 0.6; }
     }
+
+    .kpi-delta {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .kpi-delta.pos {
+      background: rgba(31, 209, 150, .15);
+      color: #1fd196;
+    }
+
+    .kpi-delta.neg {
+      background: rgba(240, 112, 64, .15);
+      color: #f07040;
+    }
+
+    .kpi-delta.neu {
+      background: rgba(255, 255, 255, .07);
+      color: var(--text2);
+    }
   </style>
 </head>
 
