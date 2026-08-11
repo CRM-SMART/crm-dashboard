@@ -838,6 +838,41 @@
       <div style="position:relative;width:100%;height:260px"><canvas id="chart-crm-evolucao"></canvas></div>
     </div>
 
+    <!-- Nova Linha: Histórico Mensal & Eficiência (Looker Studio) -->
+    <div class="row" style="margin-bottom: 25px;">
+      <!-- Card 1: Evolução Histórica Mensal -->
+      <div class="col" style="flex: 1.6; min-width: 0;">
+        <div class="card">
+          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div class="card-title">Evolução Histórica Mensal (Receita por Subcanal & Share CRM)</div>
+              <div class="legend" id="leg-crm-mensal"></div>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-mensal-mom">Calculando evolução...</div>
+          </div>
+          <div style="position:relative; width:100%; height:300px;">
+            <canvas id="chart-crm-mensal"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Card 2: Eficiência Mensal -->
+      <div class="col" style="flex: 1.1; min-width: 0;">
+        <div class="card">
+          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div class="card-title">Eficiência CRM (Receita x Tráfego x Conversão)</div>
+              <div class="legend" id="leg-crm-eficiencia-mensal"></div>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-eficiencia-mom">Receita x Sessões x Conversão</div>
+          </div>
+          <div style="position:relative; width:100%; height:300px;">
+            <canvas id="chart-crm-eficiencia-mensal"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
 
     <!-- Highlights -->
@@ -1438,6 +1473,351 @@
           `;
           hGrid.innerHTML = html;
         }
+
+      // =========================================================================
+      // --- GRÁFICOS MENSAIS HISTÓRICOS (Looker Studio) ---
+      // =========================================================================
+      
+      // 1. Filtrar dados com base em todos os filtros (exceto início/fim de data)
+      const monthlyFilteredData = rawData.filter(r => {
+        // Filtro PDV
+        if (pdv && r.pdv !== pdv) return false;
+        
+        // Filtro Tipo de Disparo
+        if (disparo === 'auto' && !isAutomated(r)) return false;
+        if (disparo === 'manual' && isAutomated(r)) return false;
+        
+        // Filtro In-App
+        if (inappMode === 'without' && isRowInApp(r)) return false;
+        
+        // Filtro Busca
+        if (campanhaBusca && !String(r.campanha || '').toLowerCase().includes(campanhaBusca)) return false;
+        
+        // Filtro Origens selecionadas
+        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+          const selSet = new Set(window.selectedOrigens);
+          if (!selSet.has(r.midia)) return false;
+        }
+        
+        return true;
+      });
+
+      // 2. Agrupar dados por Mês
+      const monthlyMap = {};
+      
+      // Agrupar também o faturamento total da empresa por mês para calcular o Share (respeitando apenas o filtro de PDV)
+      const totalMonthlyMap = {};
+      rawData.forEach(r => {
+        if (!r.date || r.date.length < 7) return;
+        if (pdv && r.pdv !== pdv) return;
+        const monthKey = r.date.slice(0, 7);
+        totalMonthlyMap[monthKey] = (totalMonthlyMap[monthKey] || 0) + r.receita;
+      });
+
+      function getCrmSubChannel(midia) {
+        const m = String(midia || '').toLowerCase();
+        if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
+        if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+        if (m.includes('whatsapp') || m.includes('wpp')) return 'WhatsApp';
+        return 'E-mail & Outros';
+      }
+
+      monthlyFilteredData.forEach(r => {
+        if (!r.date || r.date.length < 7) return;
+        const monthKey = r.date.slice(0, 7); // "YYYY-MM"
+        if (!monthlyMap[monthKey]) {
+          monthlyMap[monthKey] = {
+            crmTotal: 0,
+            sessTotal: 0,
+            transTotal: 0,
+            appPush: 0,
+            webPush: 0,
+            whatsapp: 0,
+            emailOutros: 0
+          };
+        }
+        
+        if (isCRM(r.canal)) {
+          monthlyMap[monthKey].crmTotal += r.receita;
+          monthlyMap[monthKey].sessTotal += r.sessoes;
+          monthlyMap[monthKey].transTotal += r.trans;
+          
+          const sub = getCrmSubChannel(r.midia);
+          if (sub === 'App Push') monthlyMap[monthKey].appPush += r.receita;
+          else if (sub === 'Web Push') monthlyMap[monthKey].webPush += r.receita;
+          else if (sub === 'WhatsApp') monthlyMap[monthKey].whatsapp += r.receita;
+          else monthlyMap[monthKey].emailOutros += r.receita;
+        }
+      });
+
+      // Ordenar os meses
+      const sortedMonths = Object.keys(monthlyMap).sort();
+      
+      const mLabels = sortedMonths.map(m => {
+        const [y, mm] = m.split('-');
+        const monthNames = {
+          '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr', '05': 'Mai', '06': 'Jun',
+          '07': 'Jul', '08': 'Ago', '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
+        };
+        return `${monthNames[mm]}/${y.slice(2)}`;
+      });
+
+      const mAppPush = sortedMonths.map(m => Math.round(monthlyMap[m].appPush));
+      const mWebPush = sortedMonths.map(m => Math.round(monthlyMap[m].webPush));
+      const mWhatsapp = sortedMonths.map(m => Math.round(monthlyMap[m].whatsapp));
+      const mEmailOutros = sortedMonths.map(m => Math.round(monthlyMap[m].emailOutros));
+      
+      const mCrmTotal = sortedMonths.map(m => Math.round(monthlyMap[m].crmTotal));
+      const mSessTotal = sortedMonths.map(m => Math.round(monthlyMap[m].sessTotal));
+      const mConvTotal = sortedMonths.map(m => monthlyMap[m].sessTotal > 0 ? (monthlyMap[m].transTotal / monthlyMap[m].sessTotal * 100) : 0);
+      
+      const mShare = sortedMonths.map(m => {
+        const totalFaturamento = totalMonthlyMap[m] || 0;
+        const crmFaturamento = monthlyMap[m].crmTotal || 0;
+        return totalFaturamento > 0 ? Number((crmFaturamento / totalFaturamento * 100).toFixed(2)) : 0;
+      });
+
+      // 3. Calcular evolução MoM para o último mês
+      if (sortedMonths.length >= 2) {
+        const lastIdx = sortedMonths.length - 1;
+        const prevIdx = lastIdx - 1;
+        
+        const lastMonthLabel = mLabels[lastIdx];
+        
+        const lastRec = mCrmTotal[lastIdx];
+        const prevRec = mCrmTotal[prevIdx];
+        const recMom = prevRec > 0 ? ((lastRec - prevRec) / prevRec * 100) : null;
+        
+        const lastShare = mShare[lastIdx];
+        const prevShare = mShare[prevIdx];
+        const shareDiff = lastShare - prevShare;
+        
+        const recMomStr = recMom !== null ? `${recMom > 0 ? '+' : ''}${recMom.toFixed(1)}% MoM` : '—';
+        const shareMomStr = `${shareDiff > 0 ? '+' : ''}${shareDiff.toFixed(2)}% p.p. MoM`;
+        
+        const recCls = recMom > 0 ? 'pos' : recMom < 0 ? 'neg' : 'neu';
+        const shareCls = shareDiff > 0 ? 'pos' : shareDiff < 0 ? 'neg' : 'neu';
+        
+        document.getElementById('sub-crm-mensal-mom').innerHTML = `
+          Mês Recente (${lastMonthLabel}): 
+          Receita: <span class="kpi-delta ${recCls}" style="margin-left:2px; float:none; display:inline;">${recMomStr}</span> | 
+          Share: <span class="kpi-delta ${shareCls}" style="margin-left:2px; float:none; display:inline;">${shareMomStr}</span>
+        `;
+        
+        // Subtítulo Eficiência
+        const lastConv = mConvTotal[lastIdx];
+        const prevConv = mConvTotal[prevIdx];
+        const convDiff = lastConv - prevConv;
+        const convCls = convDiff > 0 ? 'pos' : convDiff < 0 ? 'neg' : 'neu';
+        const convMomStr = `${convDiff > 0 ? '+' : ''}${convDiff.toFixed(2)}% p.p. MoM`;
+        
+        document.getElementById('sub-crm-eficiencia-mom').innerHTML = `
+          Mês Recente (${lastMonthLabel}): 
+          Conversão: <span class="kpi-delta ${convCls}" style="margin-left:2px; float:none; display:inline;">${convMomStr}</span>
+        `;
+      } else {
+        document.getElementById('sub-crm-mensal-mom').textContent = 'Histórico mensal indisponível';
+        document.getElementById('sub-crm-eficiencia-mom').textContent = 'Métricas de eficiência mensais';
+      }
+
+      // 4. Renderizar Gráfico 1: Evolução Histórica Mensal (Stacked Bar + Line)
+      dc('crm-mensal');
+      leg('leg-crm-mensal', [
+        { color: '#a078f0', label: 'App Push' },
+        { color: '#4b8ef5', label: 'Web Push' },
+        { color: '#1fd196', label: 'WhatsApp' },
+        { color: '#8a8e96', label: 'E-mail & Outros' },
+        { color: '#f07040', label: 'Share CRM' }
+      ]);
+      
+      charts['crm-mensal'] = new Chart(document.getElementById('chart-crm-mensal'), {
+        data: {
+          labels: mLabels,
+          datasets: [
+            {
+              type: 'line',
+              label: 'Share CRM',
+              data: mShare,
+              borderColor: '#f07040',
+              backgroundColor: 'transparent',
+              yAxisID: 'yShare',
+              pointRadius: 4,
+              pointBackgroundColor: '#f07040',
+              borderWidth: 2.5,
+              order: 1,
+              datalabels: {
+                display: true,
+                align: 'top',
+                color: '#f07040',
+                font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
+                formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+              }
+            },
+            {
+              type: 'bar',
+              label: 'App Push',
+              data: mAppPush,
+              backgroundColor: '#a078f0',
+              yAxisID: 'yRec',
+              stack: 'crm',
+              order: 2,
+              datalabels: { display: false }
+            },
+            {
+              type: 'bar',
+              label: 'Web Push',
+              data: mWebPush,
+              backgroundColor: '#4b8ef5',
+              yAxisID: 'yRec',
+              stack: 'crm',
+              order: 3,
+              datalabels: { display: false }
+            },
+            {
+              type: 'bar',
+              label: 'WhatsApp',
+              data: mWhatsapp,
+              backgroundColor: '#1fd196',
+              yAxisID: 'yRec',
+              stack: 'crm',
+              order: 4,
+              datalabels: { display: false }
+            },
+            {
+              type: 'bar',
+              label: 'E-mail & Outros',
+              data: mEmailOutros,
+              backgroundColor: '#8a8e96',
+              yAxisID: 'yRec',
+              stack: 'crm',
+              order: 5,
+              datalabels: { display: false }
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.dataset.label === 'Share CRM') return `Share CRM: ${ctx.raw}%`;
+                  return `${ctx.dataset.label}: ${fmtR(ctx.raw)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
+            yRec: {
+              stacked: true,
+              position: 'left',
+              ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+              grid: { color: GRID }
+            },
+            yShare: {
+              position: 'right',
+              ticks: { callback: v => v + '%', color: TICK, font: TF },
+              grid: { display: false },
+              min: 0,
+              max: Math.max(...mShare) > 10 ? undefined : 10
+            }
+          }
+        }
+      });
+
+      // 5. Renderizar Gráfico 2: Eficiência Mensal (Receita x Sessões x Conversão)
+      dc('crm-eficiencia-mensal');
+      leg('leg-crm-eficiencia-mensal', [
+        { color: 'rgba(31, 209, 150, 0.4)', label: 'Receita CRM' },
+        { color: '#f0a030', label: 'Sessões' },
+        { color: '#1fd196', label: 'Conversão CRM' }
+      ]);
+      
+      charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
+        data: {
+          labels: mLabels,
+          datasets: [
+            {
+              type: 'line',
+              label: 'Conversão CRM',
+              data: mConvTotal,
+              borderColor: '#1fd196',
+              borderDash: [4, 4],
+              backgroundColor: 'transparent',
+              yAxisID: 'yConv',
+              pointRadius: 3,
+              pointBackgroundColor: '#1fd196',
+              borderWidth: 2,
+              order: 1,
+              datalabels: {
+                display: true,
+                align: 'top',
+                color: '#1fd196',
+                font: { size: 9, family: "'DM Mono',monospace" },
+                formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+              }
+            },
+            {
+              type: 'line',
+              label: 'Sessões',
+              data: mSessTotal,
+              borderColor: '#f0a030',
+              backgroundColor: 'transparent',
+              yAxisID: 'ySess',
+              pointRadius: 4,
+              pointBackgroundColor: '#f0a030',
+              borderWidth: 2,
+              order: 2,
+              datalabels: { display: false }
+            },
+            {
+              type: 'bar',
+              label: 'Receita CRM',
+              data: mCrmTotal,
+              backgroundColor: 'rgba(31, 209, 150, 0.4)',
+              yAxisID: 'yRec',
+              order: 3,
+              datalabels: { display: false }
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.dataset.label === 'Conversão CRM') return `Conversão CRM: ${ctx.raw.toFixed(2)}%`;
+                  if (ctx.dataset.label === 'Sessões') return `Sessões: ${fmt(ctx.raw)}`;
+                  return `Receita CRM: ${fmtR(ctx.raw)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            yRec: {
+              position: 'left',
+              ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+              grid: { color: GRID }
+            },
+            ySess: {
+              position: 'right',
+              ticks: { callback: v => fmt(v), color: TICK, font: TF },
+              grid: { display: false }
+            },
+            yConv: {
+              display: false,
+              min: 0
+            }
+          }
+        }
+      });
 
         const key = localStorage.getItem('guanabara_gemini_key');
         if (key) {
