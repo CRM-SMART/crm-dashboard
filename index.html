@@ -1461,7 +1461,6 @@
       document.getElementById('status-txt').textContent = 'Carregando...';
       Papa.parse(CSV_URL, {
         download: true, header: true, skipEmptyLines: true,
-        worker: true,
         complete: function (res) {
           const sample = res.data[0] || {};
           const K = {
