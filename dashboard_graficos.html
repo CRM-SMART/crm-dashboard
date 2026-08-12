@@ -628,9 +628,10 @@
   </header>
 
   <div class="tab-bar">
-    <a href="index.html" class="tab-btn">Visão Geral</a>
-    <a href="dashboard_crm.html" class="tab-btn active">Análise CRM</a>
-  </div>
+      <a href="index.html" class="tab-btn">Visão Geral</a>
+      <a href="dashboard_graficos.html" class="tab-btn active">Gráficos CRM</a>
+      <a href="dashboard_crm.html" class="tab-btn">Análise CRM</a>
+    </div>
 
   <div class="page">
 
@@ -922,6 +923,81 @@
     const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
     const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
     let rawData = [], charts = {}, maxDate = '';
+
+    // --- FUNÇÕES AUXILIARES RESTAURADAS ---
+    function parseLocal(dStr) {
+      if (!dStr) return new Date();
+      const [y, m, d] = dStr.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function delta(a, b) { 
+      if (b === 0) return null; 
+      return (a - b) / Math.abs(b) * 100; 
+    }
+    function isCRM(canal) { 
+      return String(canal || '').toUpperCase() === 'CRM'; 
+    }
+    function isAutomated(r) {
+      const txt = String(r.search_text || r.campanha || '').toLowerCase();
+      const m = String(r.midia || '').toLowerCase();
+      return txt.includes('architect') || txt.includes('architecht') || m.includes('architect') || m.includes('firebase') || m.includes('pushnews');
+    }
+    function isRowInApp(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('insite') || sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
+             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app') || cmp.includes('insite');
+    }
+    function norm(s) { 
+      return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); 
+    }
+    function findKey(row, candidates) { 
+      const keys = Object.keys(row); 
+      for (const c of candidates) { 
+        const nc = norm(c); 
+        const k = keys.find(k => norm(k) === nc); 
+        if (k) return k; 
+      } 
+      return candidates[0]; 
+    }
+    function fmt(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      return Intl.NumberFormat('pt-BR').format(Math.round(v)); 
+    }
+    function fmtR(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v)); 
+    }
+    function fmtC(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; 
+      if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; 
+      return fmtR(v); 
+    }
+    function parseNum(s) { 
+      if (!s && s !== 0) return 0; 
+      s = String(s).trim().replace(/\s/g, ''); 
+      if (s.includes('.') && s.includes(',')) { 
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); 
+        else s = s.replace(/,/g, ''); 
+      } else if (s.includes(',') && !s.includes('.')) { 
+        s = s.replace(',', '.'); 
+      } 
+      return parseFloat(s) || 0; 
+    }
+    function parseDate(d) { 
+      if (!d) return null; 
+      const s = String(d).trim(); 
+      if (s.includes('/')) { 
+        const p = s.split('/'); 
+        if (p.length === 3) { 
+          if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; 
+          return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`; 
+        } 
+      } 
+      if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; 
+      return s; 
+    }
     const C = { crm: '#a078f0', site: '#4b8ef5', app: '#1fd196', total: '#f2a63d' };
     const TF = { family: "'DM Sans', sans-serif", size: 10 };
     const TICK = '#8a8e96';
