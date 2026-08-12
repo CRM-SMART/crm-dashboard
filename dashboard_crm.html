@@ -668,6 +668,13 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Granularidade</label>
+        <select id="f-granularity">
+          <option value="daily">Diária</option>
+          <option value="monthly" selected>Mensal</option>
+        </select>
+      </div>
+
       <div class="filter-group"><label>Buscar Campanha</label>
         <input type="text" id="f-campanha" placeholder="Digite o nome..." style="width:180px;" />
       </div>
@@ -813,50 +820,43 @@
       </div>
     </div>
 
-    <!-- Evolução -->
-    <p class="section-title">Evolução de Faturamento CRM</p>
-    <div class="card">
-      <h3 style="margin:0; margin-bottom: 10px;">Evolução da Receita de CRM (Automático vs Manual)</h3>
-      
-      <!-- Ajustar eixos da evolução -->
-      <details class="axis-editor" style="margin-top:10px; margin-bottom:10px; border: 1px solid var(--border2); padding: 10px; border-radius: var(--radius); background: var(--bg3);">
-        <summary style="cursor:pointer; font-size:11px; font-weight:600; color:var(--text2);">⚙️ Ajustar Limites do Eixo Y</summary>
-        <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top:8px;">
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Mínimo (R$)</label>
-            <input id="evolRevMin" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
-          </div>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Máximo (R$)</label>
-            <input id="evolRevMax" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
-          </div>
-          <button type="button" class="cmp-btn" id="btn-reset-evol-axis" style="height:26px; font-size:10px; padding:0 10px;">Voltar ao automático</button>
-        </div>
-      </details>
-
-      <div class="legend" id="leg-crm-evolucao"></div>
-      <div style="position:relative;width:100%;height:260px"><canvas id="chart-crm-evolucao"></canvas></div>
-    </div>
-
-    <!-- Nova Linha: Histórico Mensal & Eficiência (Looker Studio) -->
+    <!-- Nova Linha Unificada de Gráficos: Evolução e Eficiência -->
+    <p class="section-title">Evolução & Eficiência de CRM</p>
     <div class="row" style="margin-bottom: 25px;">
-      <!-- Card 1: Evolução Histórica Mensal -->
+      <!-- Card 1: Evolução Histórica (Receita & Share) -->
       <div class="col" style="flex: 1.6; min-width: 0;">
         <div class="card">
           <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <div class="card-title">Evolução Histórica Mensal (Receita por Subcanal & Share CRM)</div>
-              <div class="legend" id="leg-crm-mensal"></div>
+              <div class="card-title" id="title-crm-evolucao">Evolução de Receita & Share CRM</div>
+              <div class="legend" id="leg-crm-evolucao"></div>
             </div>
-            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-mensal-mom">Calculando evolução...</div>
+            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-evolucao-mom">Calculando evolução...</div>
           </div>
+          
+          <!-- Ajustar eixos da evolução -->
+          <details class="axis-editor" style="margin: 0 15px 10px 15px; font-size:11px; color:var(--text2);">
+            <summary style="cursor:pointer; font-weight:600; outline:none; user-select:none; color:var(--text2);">⚙️ Ajustar Limites do Eixo Y</summary>
+            <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top:8px; padding: 10px; background: rgba(255,255,255,0.02); border-radius:6px; border: 1px solid var(--border2);">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Mínimo (R$)</label>
+                <input id="evolRevMin" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Máximo (R$)</label>
+                <input id="evolRevMax" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
+              </div>
+              <button type="button" class="cmp-btn" id="btn-reset-evol-axis" style="height:26px; font-size:10px; padding:0 10px;">Voltar ao automático</button>
+            </div>
+          </details>
+
           <div style="position:relative; width:100%; height:300px;">
-            <canvas id="chart-crm-mensal"></canvas>
+            <canvas id="chart-crm-evolucao"></canvas>
           </div>
         </div>
       </div>
       
-      <!-- Card 2: Eficiência Mensal -->
+      <!-- Card 2: Eficiência CRM -->
       <div class="col" style="flex: 1.1; min-width: 0;">
         <div class="card">
           <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
@@ -866,7 +866,7 @@
             </div>
             <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-eficiencia-mom">Receita x Sessões x Conversão</div>
           </div>
-          <div style="position:relative; width:100%; height:300px;">
+          <div style="position:relative; width:100%; height:300px; padding-top: 25px;">
             <canvas id="chart-crm-eficiencia-mensal"></canvas>
           </div>
         </div>
@@ -1294,239 +1294,34 @@
 
       const customMinEvol = document.getElementById('evolRevMin').value !== "" ? Number(document.getElementById('evolRevMin').value) : undefined;
       const customMaxEvol = document.getElementById('evolRevMax').value !== "" ? Number(document.getElementById('evolRevMax').value) : undefined;
+      const granularity = document.getElementById('f-granularity').value;
 
-      // Renderização do gráfico de evolução dependendo se há comparativo ou não
-      if (cmp === 'none') {
-        const crmDatesMap = {};
-        data.forEach(r => {
-          if (!crmDatesMap[r.date]) crmDatesMap[r.date] = { auto: 0, manual: 0 };
-          const isAuto = isAutomated(r);
-          if (isAuto) crmDatesMap[r.date].auto += r.receita;
-          else crmDatesMap[r.date].manual += r.receita;
-        });
-        const crmDates = Object.keys(crmDatesMap).sort();
-        const autoEvol = crmDates.map(d => Math.round(crmDatesMap[d].auto));
-        const manualEvol = crmDates.map(d => Math.round(crmDatesMap[d].manual));
-        
-        dc('crm-evolucao');
-        leg('leg-crm-evolucao', [{color: C.crm, label: 'Automático (Architect)'}, {color: '#4b8ef5', label: 'Manual (Campanhas)'}]);
-        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
-          type: 'line',
-          data: {
-            labels: crmDates.map(d => parseLocal(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})),
-            datasets: [
-              { label: 'Automático', data: autoEvol, borderColor: C.crm, backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-              { label: 'Manual', data: manualEvol, borderColor: '#4b8ef5', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtC(ctx.raw)}` } } },
-            scales: {
-              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
-              y: { min: customMinEvol, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
-            }
-          }
-        });
-      } else {
-        const bDates = getPeriodB_Dates(ini, fim, cmp);
-        
-        const getDailyCrm = (dList, startD, endD) => {
-          const map = {};
-          dList.forEach(r => {
-            map[r.date] = (map[r.date] || 0) + r.receita;
-          });
-          const datesList = [];
-          let curr = new Date(startD);
-          const endLimit = new Date(endD);
-          while (curr <= endLimit) {
-            datesList.push(curr.toISOString().slice(0, 10));
-            curr.setDate(curr.getDate() + 1);
-          }
-          return {
-            labels: datesList.map(d => parseLocal(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})),
-            data: datesList.map(d => Math.round(map[d] || 0))
-          };
-        };
+      // Definir função de chave de agrupamento (Dia ou Mês)
+      const keyFn = (dStr) => {
+        if (!dStr || dStr.length < 10) return '';
+        return granularity === 'monthly' ? dStr.slice(0, 7) : dStr;
+      };
 
-        const resA = getDailyCrm(data, ini, fim);
-        
-        // Buscar dadosB aplicando os mesmos filtros
-        let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
-        if (inappMode === 'without') {
-          crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
-        }
-        if (disparo === 'auto') {
-          crmBaseB = crmBaseB.filter(r => isAutomated(r));
-        } else if (disparo === 'manual') {
-          crmBaseB = crmBaseB.filter(r => !isAutomated(r));
-        }
-        if (campanhaBusca) {
-          crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
-        }
-        let dataB = crmBaseB;
-        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
-          const selSet = new Set(window.selectedOrigens);
-          dataB = crmBaseB.filter(r => selSet.has(r.midia));
-        }
-        
-        const resB = getDailyCrm(dataB, bDates.bIni, bDates.bFim);
-
-        dc('crm-evolucao');
-        const labelA = 'Período Atual';
-        const labelB = cmp === 'wow' ? 'Semana Anterior' : cmp === 'mom' ? 'Mês Anterior' : 'Ano Anterior';
-        
-        leg('leg-crm-evolucao', [{color: '#1fd196', label: labelA}, {color: '#8a8e96', label: labelB}]);
-        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
-          type: 'line',
-          data: {
-            labels: resA.labels,
-            datasets: [
-              { label: labelA, data: resA.data, borderColor: '#1fd196', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-              { label: labelB, data: resB.data, borderColor: '#8a8e96', borderDash: [5, 5], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtC(ctx.raw)}` } } },
-            scales: {
-              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
-              y: { min: customMinEvol, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
-            }
-          }
-        });
-      }
-
-      // --- Listeners de Editores de Eixo e Filtros ---
-      if (!window.listenersInitialized) {
-        document.querySelectorAll('.axis-editor input').forEach(input => {
-          input.addEventListener('input', updateAll);
-        });
-
-        document.getElementById('btn-reset-evol-axis').addEventListener('click', () => {
-          document.getElementById('evolRevMin').value = '';
-          document.getElementById('evolRevMax').value = '';
-          updateAll();
-        });
-
-        document.getElementById('f-inapp').addEventListener('change', updateAll);
-        document.getElementById('f-cmp').addEventListener('change', updateAll);
-
-        window.listenersInitialized = true;
-      }
-
-      // Highlights
-      let bestDay = '—', bestDayRec = 0;
-      crmDates.forEach(d => {
-        const rec = crmDatesMap[d].auto + crmDatesMap[d].manual;
-        if (rec > bestDayRec) {
-          bestDayRec = rec;
-          bestDay = d;
-        }
-      });
-
-      if (data.length === 0) {
-        hGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text3); padding: 40px;">Nenhum dado de CRM disponível para o período e filtros selecionados.</div>`;
-        return;
-      }
-
-        function renderFallback() {
-          const bestDayFmt = bestDay !== '—' ? bestDay.split('-').reverse().join('/') : '—';
-          const topMidia = sortedMidias[0] || '—';
-          const topMidiaRec = midiaRecMap[topMidia] || 0;
-          const topMidiaPct = crmRec > 0 ? (topMidiaRec / crmRec * 100).toFixed(1) : 0;
-          
-          let html = `
-            <div class="highlight-card" style="border-left: 3px solid var(--accent); grid-column: span 1;">
-              <div class="highlight-card-title">📈 Retenção & LTV: Penetração de Receita</div>
-              <div class="highlight-card-num" style="color: var(--accent); font-size: 20px;">${fmtR(crmRec)} (${crmRecShare.toFixed(2)}% Share)</div>
-              <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
-                O faturamento de CRM representa uma taxa de penetração de <strong>${crmRecShare.toFixed(2)}%</strong> sobre a receita global de vendas da Guanabara (R$ ${fmtC(totalRec)}). Isso indica que a base de clientes recorrentes possui alta representatividade, gerando receitas com baixo custo de aquisição.
-                <br><br>
-                <strong>🎯 Ação Recomendada:</strong> Ampliar campanhas de remarketing para usuários que realizaram a última compra há mais de 60 dias (estratégia Winback) para acelerar a recompra.
-              </div>
-            </div>
-            
-            <div class="highlight-card" style="border-left: 3px solid var(--app); grid-column: span 1;">
-              <div class="highlight-card-title">📱 UX & Mobile: Eficiência do Canal App</div>
-              <div class="highlight-card-num" style="color: var(--app); font-size: 20px;">${appCrmPct.toFixed(1)}% Share no CRM</div>
-              <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
-                O canal <strong>App</strong> é responsável por <strong>${appCrmPct.toFixed(1)}%</strong> da receita de CRM (<strong>${fmtR(appCrmRec)}</strong>) com conversão média de <strong>${appCrmConv.toFixed(2)}%</strong>. A performance no App supera a conversão do <strong>Site</strong> (<strong>${siteCrmPct.toFixed(1)}%</strong> de share, conversão de <strong>${siteCrmConv.toFixed(2)}%</strong>).
-                <br><br>
-                <strong>🎯 Ação Recomendada:</strong> Implementar incentivos de desconto exclusivo in-app nas comunicações enviadas via web, visando migrar o tráfego qualificado do Site para o App.
-              </div>
-            </div>
-            
-            <div class="highlight-card" style="border-left: 3px solid var(--crm); grid-column: span 2;">
-              <div class="highlight-card-title">🤖 Automação: Alavanca de Escala no Architect</div>
-              <div class="highlight-card-num" style="color: var(--crm); font-size: 20px;">${autoConv.toFixed(2)}% de Conversão vs. ${manualConv.toFixed(2)}% Manual</div>
-              <div class="highlight-card-desc" style="font-size: 12px; line-height: 1.5; color: var(--text2);">
-                As réguas automáticas (Architect) registram uma taxa de conversão média de <strong>${autoConv.toFixed(2)}%</strong> contra apenas <strong>${manualConv.toFixed(2)}%</strong> dos disparos manuais em lote. Atualmente, a automação responde por <strong>${autoPct.toFixed(1)}%</strong> (<strong>${fmtR(autoRec)}</strong>) do total CRM, indicando que a eficiência das jornadas está sendo subutilizada em relação aos disparos manuais (<strong>${manualPct.toFixed(1)}%</strong> share).
-                <br><br>
-                <strong>🎯 Ação Recomendada:</strong> Priorizar o desenvolvimento de novas jornadas automáticas de abandono de carrinho, pesquisa de destino e boas-vindas para capturar o tráfego ocioso com maior ROI e escalabilidade.
-              </div>
-            </div>
-          `;
-          hGrid.innerHTML = html;
-        }
-
-      // =========================================================================
-      // --- GRÁFICOS MENSAIS HISTÓRICOS (Looker Studio) ---
-      // =========================================================================
-      
-      // 1. Filtrar dados com base em todos os filtros (exceto início/fim de data)
-      const monthlyFilteredData = rawData.filter(r => {
-        // Filtro PDV
-        if (pdv && r.pdv !== pdv) return false;
-        
-        // Filtro Tipo de Disparo
-        if (disparo === 'auto' && !isAutomated(r)) return false;
-        if (disparo === 'manual' && isAutomated(r)) return false;
-        
-        // Filtro In-App
-        if (inappMode === 'without' && isRowInApp(r)) return false;
-        
-        // Filtro Busca
-        if (campanhaBusca && !String(r.campanha || '').toLowerCase().includes(campanhaBusca)) return false;
-        
-        // Filtro Origens selecionadas
-        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
-          const selSet = new Set(window.selectedOrigens);
-          if (!selSet.has(r.midia)) return false;
-        }
-        
-        return true;
-      });
-
-      // 2. Agrupar dados por Mês
-      const monthlyMap = {};
-      
-      // Agrupar também o faturamento total da empresa por mês para calcular o Share (respeitando apenas o filtro de PDV)
-      const totalMonthlyMap = {};
+      // 1. Obter faturamento total consolidado (respeitando apenas o filtro de PDV) por dia/mês para o cálculo do Share
+      const totalGroupMap = {};
       rawData.forEach(r => {
-        if (!r.date || r.date.length < 7) return;
+        if (!r.date) return;
         if (pdv && r.pdv !== pdv) return;
-        const monthKey = r.date.slice(0, 7);
-        totalMonthlyMap[monthKey] = (totalMonthlyMap[monthKey] || 0) + r.receita;
+        const key = keyFn(r.date);
+        if (key) {
+          totalGroupMap[key] = (totalGroupMap[key] || 0) + r.receita;
+        }
       });
 
-      function getCrmSubChannel(midia) {
-        const m = String(midia || '').toLowerCase();
-        if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
-        if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
-        if (m.includes('whatsapp') || m.includes('wpp')) return 'WhatsApp';
-        return 'E-mail & Outros';
-      }
-
-      monthlyFilteredData.forEach(r => {
-        if (!r.date || r.date.length < 7) return;
-        const monthKey = r.date.slice(0, 7); // "YYYY-MM"
-        if (!monthlyMap[monthKey]) {
-          monthlyMap[monthKey] = {
+      // 2. Agrupar dados de CRM com base nos filtros ativos
+      const groupMap = {};
+      data.forEach(r => {
+        if (!r.date) return;
+        const key = keyFn(r.date);
+        if (!key) return;
+        
+        if (!groupMap[key]) {
+          groupMap[key] = {
             crmTotal: 0,
             sessTotal: 0,
             transTotal: 0,
@@ -1537,52 +1332,64 @@
           };
         }
         
-        if (isCRM(r.canal)) {
-          monthlyMap[monthKey].crmTotal += r.receita;
-          monthlyMap[monthKey].sessTotal += r.sessoes;
-          monthlyMap[monthKey].transTotal += r.trans;
-          
-          const sub = getCrmSubChannel(r.midia);
-          if (sub === 'App Push') monthlyMap[monthKey].appPush += r.receita;
-          else if (sub === 'Web Push') monthlyMap[monthKey].webPush += r.receita;
-          else if (sub === 'WhatsApp') monthlyMap[monthKey].whatsapp += r.receita;
-          else monthlyMap[monthKey].emailOutros += r.receita;
+        groupMap[key].crmTotal += r.receita;
+        groupMap[key].sessTotal += r.sessoes;
+        groupMap[key].transTotal += r.trans;
+        
+        const sub = getCrmSubChannel(r.midia);
+        if (sub === 'App Push') groupMap[key].appPush += r.receita;
+        else if (sub === 'Web Push') groupMap[key].webPush += r.receita;
+        else if (sub === 'WhatsApp') groupMap[key].whatsapp += r.receita;
+        else groupMap[key].emailOutros += r.receita;
+      });
+
+      // Ordenar chaves cronologicamente
+      const sortedKeys = Object.keys(groupMap).sort();
+      
+      const mLabels = sortedKeys.map(k => {
+        if (granularity === 'monthly') {
+          const [y, mm] = k.split('-');
+          const monthNames = {
+            '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr', '05': 'Mai', '06': 'Jun',
+            '07': 'Jul', '08': 'Ago', '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
+          };
+          return `${monthNames[mm]}/${y.slice(2)}`;
+        } else {
+          // Diário: "YYYY-MM-DD" -> "DD/MM"
+          return k.slice(8, 10) + '/' + k.slice(5, 7);
         }
       });
 
-      // Ordenar os meses
-      const sortedMonths = Object.keys(monthlyMap).sort();
+      const mAppPush = sortedKeys.map(k => Math.round(groupMap[k].appPush));
+      const mWebPush = sortedKeys.map(k => Math.round(groupMap[k].webPush));
+      const mWhatsapp = sortedKeys.map(k => Math.round(groupMap[k].whatsapp));
+      const mEmailOutros = sortedKeys.map(k => Math.round(groupMap[k].emailOutros));
       
-      const mLabels = sortedMonths.map(m => {
-        const [y, mm] = m.split('-');
-        const monthNames = {
-          '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr', '05': 'Mai', '06': 'Jun',
-          '07': 'Jul', '08': 'Ago', '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
-        };
-        return `${monthNames[mm]}/${y.slice(2)}`;
-      });
-
-      const mAppPush = sortedMonths.map(m => Math.round(monthlyMap[m].appPush));
-      const mWebPush = sortedMonths.map(m => Math.round(monthlyMap[m].webPush));
-      const mWhatsapp = sortedMonths.map(m => Math.round(monthlyMap[m].whatsapp));
-      const mEmailOutros = sortedMonths.map(m => Math.round(monthlyMap[m].emailOutros));
+      const mCrmTotal = sortedKeys.map(k => Math.round(groupMap[k].crmTotal));
+      const mSessTotal = sortedKeys.map(k => Math.round(groupMap[k].sessTotal));
+      const mConvTotal = sortedKeys.map(k => groupMap[k].sessTotal > 0 ? (groupMap[k].transTotal / groupMap[k].sessTotal * 100) : 0);
       
-      const mCrmTotal = sortedMonths.map(m => Math.round(monthlyMap[m].crmTotal));
-      const mSessTotal = sortedMonths.map(m => Math.round(monthlyMap[m].sessTotal));
-      const mConvTotal = sortedMonths.map(m => monthlyMap[m].sessTotal > 0 ? (monthlyMap[m].transTotal / monthlyMap[m].sessTotal * 100) : 0);
-      
-      const mShare = sortedMonths.map(m => {
-        const totalFaturamento = totalMonthlyMap[m] || 0;
-        const crmFaturamento = monthlyMap[m].crmTotal || 0;
+      const mShare = sortedKeys.map(k => {
+        const totalFaturamento = totalGroupMap[k] || 0;
+        const crmFaturamento = groupMap[k].crmTotal || 0;
         return totalFaturamento > 0 ? Number((crmFaturamento / totalFaturamento * 100).toFixed(2)) : 0;
       });
 
-      // 3. Calcular evolução MoM para o último mês
-      if (sortedMonths.length >= 2) {
-        const lastIdx = sortedMonths.length - 1;
+      function getCrmSubChannel(midia) {
+        const m = String(midia || '').toLowerCase();
+        if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
+        if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+        if (m.includes('whatsapp') || m.includes('wpp')) return 'WhatsApp';
+        return 'E-mail & Outros';
+      }
+
+      // 3. Calcular evolução MoM para o último período
+      if (sortedKeys.length >= 2) {
+        const lastIdx = sortedKeys.length - 1;
         const prevIdx = lastIdx - 1;
         
-        const lastMonthLabel = mLabels[lastIdx];
+        const lastPeriodLabel = mLabels[lastIdx];
+        const unit = granularity === 'monthly' ? 'Mês' : 'Dia';
         
         const lastRec = mCrmTotal[lastIdx];
         const prevRec = mCrmTotal[prevIdx];
@@ -1592,14 +1399,14 @@
         const prevShare = mShare[prevIdx];
         const shareDiff = lastShare - prevShare;
         
-        const recMomStr = recMom !== null ? `${recMom > 0 ? '+' : ''}${recMom.toFixed(1)}% MoM` : '—';
-        const shareMomStr = `${shareDiff > 0 ? '+' : ''}${shareDiff.toFixed(2)}% p.p. MoM`;
+        const recMomStr = recMom !== null ? `${recMom > 0 ? '+' : ''}${recMom.toFixed(1)}%` : '—';
+        const shareMomStr = `${shareDiff > 0 ? '+' : ''}${shareDiff.toFixed(2)}% p.p.`;
         
         const recCls = recMom > 0 ? 'pos' : recMom < 0 ? 'neg' : 'neu';
         const shareCls = shareDiff > 0 ? 'pos' : shareDiff < 0 ? 'neg' : 'neu';
         
-        document.getElementById('sub-crm-mensal-mom').innerHTML = `
-          Mês Recente (${lastMonthLabel}): 
+        document.getElementById('sub-crm-evolucao-mom').innerHTML = `
+          Último ${unit} (${lastPeriodLabel}): 
           Receita: <span class="kpi-delta ${recCls}" style="margin-left:2px; float:none; display:inline;">${recMomStr}</span> | 
           Share: <span class="kpi-delta ${shareCls}" style="margin-left:2px; float:none; display:inline;">${shareMomStr}</span>
         `;
@@ -1609,217 +1416,367 @@
         const prevConv = mConvTotal[prevIdx];
         const convDiff = lastConv - prevConv;
         const convCls = convDiff > 0 ? 'pos' : convDiff < 0 ? 'neg' : 'neu';
-        const convMomStr = `${convDiff > 0 ? '+' : ''}${convDiff.toFixed(2)}% p.p. MoM`;
+        const convMomStr = `${convDiff > 0 ? '+' : ''}${convDiff.toFixed(2)}% p.p.`;
         
         document.getElementById('sub-crm-eficiencia-mom').innerHTML = `
-          Mês Recente (${lastMonthLabel}): 
+          Último ${unit} (${lastPeriodLabel}): 
           Conversão: <span class="kpi-delta ${convCls}" style="margin-left:2px; float:none; display:inline;">${convMomStr}</span>
         `;
       } else {
-        document.getElementById('sub-crm-mensal-mom').textContent = 'Histórico mensal indisponível';
-        document.getElementById('sub-crm-eficiencia-mom').textContent = 'Métricas de eficiência mensais';
+        document.getElementById('sub-crm-evolucao-mom').textContent = 'Histórico insuficiente para cálculo de evolução';
+        document.getElementById('sub-crm-eficiencia-mom').textContent = 'Métricas de eficiência';
       }
 
-      // 4. Renderizar Gráfico 1: Evolução Histórica Mensal (Stacked Bar + Line)
-      dc('crm-mensal');
-      leg('leg-crm-mensal', [
-        { color: '#a078f0', label: 'App Push' },
-        { color: '#4b8ef5', label: 'Web Push' },
-        { color: '#1fd196', label: 'WhatsApp' },
-        { color: '#8a8e96', label: 'E-mail & Outros' },
-        { color: '#f07040', label: 'Share CRM' }
-      ]);
-      
-      charts['crm-mensal'] = new Chart(document.getElementById('chart-crm-mensal'), {
-        data: {
-          labels: mLabels,
-          datasets: [
-            {
-              type: 'line',
-              label: 'Share CRM',
-              data: mShare,
-              borderColor: '#f07040',
-              backgroundColor: 'transparent',
-              yAxisID: 'yShare',
-              pointRadius: 4,
-              pointBackgroundColor: '#f07040',
-              borderWidth: 2.5,
-              order: 1,
-              datalabels: {
-                display: true,
-                align: 'top',
-                color: '#f07040',
-                font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
-                formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
-              }
-            },
-            {
-              type: 'bar',
-              label: 'App Push',
-              data: mAppPush,
-              backgroundColor: '#a078f0',
-              yAxisID: 'yRec',
-              stack: 'crm',
-              order: 2,
-              datalabels: { display: false }
-            },
-            {
-              type: 'bar',
-              label: 'Web Push',
-              data: mWebPush,
-              backgroundColor: '#4b8ef5',
-              yAxisID: 'yRec',
-              stack: 'crm',
-              order: 3,
-              datalabels: { display: false }
-            },
-            {
-              type: 'bar',
-              label: 'WhatsApp',
-              data: mWhatsapp,
-              backgroundColor: '#1fd196',
-              yAxisID: 'yRec',
-              stack: 'crm',
-              order: 4,
-              datalabels: { display: false }
-            },
-            {
-              type: 'bar',
-              label: 'E-mail & Outros',
-              data: mEmailOutros,
-              backgroundColor: '#8a8e96',
-              yAxisID: 'yRec',
-              stack: 'crm',
-              order: 5,
-              datalabels: { display: false }
+      if (cmp !== 'none') {
+        const bDates = getPeriodB_Dates(ini, fim, cmp);
+        
+        const getEvolData = (dList, startD, endD) => {
+          const map = {};
+          dList.forEach(r => {
+            if (!r.date) return;
+            const key = keyFn(r.date);
+            if (key) {
+              map[key] = (map[key] || 0) + r.receita;
             }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => {
-                  if (ctx.dataset.label === 'Share CRM') return `Share CRM: ${ctx.raw}%`;
-                  return `${ctx.dataset.label}: ${fmtR(ctx.raw)}`;
-                }
-              }
+          });
+          
+          const keysList = [];
+          if (granularity === 'monthly') {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              const monthKey = curr.toISOString().slice(0, 7);
+              if (!keysList.includes(monthKey)) keysList.push(monthKey);
+              curr.setMonth(curr.getMonth() + 1);
             }
-          },
-          scales: {
-            x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
-            yRec: {
-              stacked: true,
-              position: 'left',
-              ticks: { callback: v => fmtC(v), color: TICK, font: TF },
-              grid: { color: GRID }
-            },
-            yShare: {
-              position: 'right',
-              ticks: { callback: v => v + '%', color: TICK, font: TF },
-              grid: { display: false },
-              min: 0,
-              max: Math.max(...mShare) > 10 ? undefined : 10
+          } else {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              keysList.push(curr.toISOString().slice(0, 10));
+              curr.setUTCDate(curr.getUTCDate() + 1);
             }
           }
-        }
-      });
+          
+          return {
+            labels: keysList.map(k => {
+              if (granularity === 'monthly') {
+                const [y, mm] = k.split('-');
+                const monthNames = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+                return `${monthNames[mm]}/${y.slice(2)}`;
+              } else {
+                return k.slice(8, 10) + '/' + k.slice(5, 7);
+              }
+            }),
+            data: keysList.map(k => Math.round(map[k] || 0))
+          };
+        };
 
-      // 5. Renderizar Gráfico 2: Eficiência Mensal (Receita x Sessões x Conversão)
-      dc('crm-eficiencia-mensal');
-      leg('leg-crm-eficiencia-mensal', [
-        { color: 'rgba(31, 209, 150, 0.4)', label: 'Receita CRM' },
-        { color: '#f0a030', label: 'Sessões' },
-        { color: '#1fd196', label: 'Conversão CRM' }
-      ]);
-      
-      charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
-        data: {
-          labels: mLabels,
-          datasets: [
-            {
-              type: 'line',
-              label: 'Conversão CRM',
-              data: mConvTotal,
-              borderColor: '#1fd196',
-              borderDash: [4, 4],
-              backgroundColor: 'transparent',
-              yAxisID: 'yConv',
-              pointRadius: 3,
-              pointBackgroundColor: '#1fd196',
-              borderWidth: 2,
-              order: 1,
-              datalabels: {
-                display: true,
-                align: 'top',
-                color: '#1fd196',
-                font: { size: 9, family: "'DM Mono',monospace" },
-                formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
-              }
-            },
-            {
-              type: 'line',
-              label: 'Sessões',
-              data: mSessTotal,
-              borderColor: '#f0a030',
-              backgroundColor: 'transparent',
-              yAxisID: 'ySess',
-              pointRadius: 4,
-              pointBackgroundColor: '#f0a030',
-              borderWidth: 2,
-              order: 2,
-              datalabels: { display: false }
-            },
-            {
-              type: 'bar',
-              label: 'Receita CRM',
-              data: mCrmTotal,
-              backgroundColor: 'rgba(31, 209, 150, 0.4)',
-              yAxisID: 'yRec',
-              order: 3,
-              datalabels: { display: false }
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => {
-                  if (ctx.dataset.label === 'Conversão CRM') return `Conversão CRM: ${ctx.raw.toFixed(2)}%`;
-                  if (ctx.dataset.label === 'Sessões') return `Sessões: ${fmt(ctx.raw)}`;
-                  return `Receita CRM: ${fmtR(ctx.raw)}`;
-                }
-              }
-            }
+        const resA = getEvolData(data, ini, fim);
+        
+        let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
+        if (inappMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
+        if (disparo === 'auto') crmBaseB = crmBaseB.filter(r => isAutomated(r));
+        else if (disparo === 'manual') crmBaseB = crmBaseB.filter(r => !isAutomated(r));
+        if (campanhaBusca) crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
+        
+        let dataB = crmBaseB;
+        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+          const selSet = new Set(window.selectedOrigens);
+          dataB = crmBaseB.filter(r => selSet.has(r.midia));
+        }
+        
+        const resB = getEvolData(dataB, bDates.bIni, bDates.bFim);
+        
+        document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita CRM (Comparativo)`;
+        const labelA = 'Período Atual';
+        const labelB = cmp === 'wow' ? 'Semana Anterior' : cmp === 'mom' ? 'Mês Anterior' : 'Ano Anterior';
+        
+        dc('crm-evolucao');
+        leg('leg-crm-evolucao', [{ color: '#1fd196', label: labelA }, { color: '#8a8e96', label: labelB }]);
+        
+        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+          type: 'line',
+          data: {
+            labels: resA.labels,
+            datasets: [
+              { label: labelA, data: resA.data, borderColor: '#1fd196', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+              { label: labelB, data: resB.data, borderColor: '#8a8e96', borderDash: [5, 5], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+            ]
           },
-          scales: {
-            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
-            yRec: {
-              position: 'left',
-              ticks: { callback: v => fmtC(v), color: TICK, font: TF },
-              grid: { color: GRID }
-            },
-            ySess: {
-              position: 'right',
-              ticks: { callback: v => fmt(v), color: TICK, font: TF },
-              grid: { display: false }
-            },
-            yConv: {
-              display: false,
-              min: 0
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}` } } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
+              y: { min: customMinEvol, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
             }
           }
-        }
-      });
+        });
+        
+        // Renderizar Eficiência com Comparativo (compara as Taxas de Conversão)
+        const getConvData = (dList, startD, endD) => {
+          const sessMap = {}, transMap = {};
+          dList.forEach(r => {
+            if (!r.date) return;
+            const key = keyFn(r.date);
+            if (key) {
+              sessMap[key] = (sessMap[key] || 0) + r.sessoes;
+              transMap[key] = (transMap[key] || 0) + r.trans;
+            }
+          });
+          
+          const keysList = [];
+          if (granularity === 'monthly') {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              const monthKey = curr.toISOString().slice(0, 7);
+              if (!keysList.includes(monthKey)) keysList.push(monthKey);
+              curr.setMonth(curr.getMonth() + 1);
+            }
+          } else {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              keysList.push(curr.toISOString().slice(0, 10));
+              curr.setUTCDate(curr.getUTCDate() + 1);
+            }
+          }
+          
+          return keysList.map(k => sessMap[k] > 0 ? (transMap[k] / sessMap[k] * 100) : 0);
+        };
+        
+        const convA = getConvData(data, ini, fim);
+        const convB = getConvData(dataB, bDates.bIni, bDates.bFim);
+        
+        dc('crm-eficiencia-mensal');
+        leg('leg-crm-eficiencia-mensal', [{ color: '#1fd196', label: labelA }, { color: '#8a8e96', label: labelB }]);
+        
+        charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
+          type: 'line',
+          data: {
+            labels: resA.labels,
+            datasets: [
+              { label: labelA, data: convA, borderColor: '#1fd196', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+              { label: labelB, data: convB, borderColor: '#8a8e96', borderDash: [5, 5], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%` } } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
+              y: { ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
+            }
+          }
+        });
+        
+      } else {
+        document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita & Share CRM`;
+        
+        // 4. Renderizar Gráfico 1: Evolução Histórica (Stacked Bar + Line)
+        dc('crm-evolucao');
+        leg('leg-crm-evolucao', [
+          { color: '#a078f0', label: 'App Push' },
+          { color: '#4b8ef5', label: 'Web Push' },
+          { color: '#1fd196', label: 'WhatsApp' },
+          { color: '#8a8e96', label: 'E-mail & Outros' },
+          { color: '#f07040', label: 'Share CRM' }
+        ]);
+        
+        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+          data: {
+            labels: mLabels,
+            datasets: [
+              {
+                type: 'line',
+                label: 'Share CRM',
+                data: mShare,
+                borderColor: '#f07040',
+                backgroundColor: 'transparent',
+                yAxisID: 'yShare',
+                pointRadius: 4,
+                pointBackgroundColor: '#f07040',
+                borderWidth: 2.5,
+                order: 1,
+                datalabels: {
+                  display: true,
+                  align: 'top',
+                  color: '#f07040',
+                  font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
+                  formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+                }
+              },
+              {
+                type: 'bar',
+                label: 'App Push',
+                data: mAppPush,
+                backgroundColor: '#a078f0',
+                yAxisID: 'yRec',
+                stack: 'crm',
+                order: 2,
+                datalabels: { display: false }
+              },
+              {
+                type: 'bar',
+                label: 'Web Push',
+                data: mWebPush,
+                backgroundColor: '#4b8ef5',
+                yAxisID: 'yRec',
+                stack: 'crm',
+                order: 3,
+                datalabels: { display: false }
+              },
+              {
+                type: 'bar',
+                label: 'WhatsApp',
+                data: mWhatsapp,
+                backgroundColor: '#1fd196',
+                yAxisID: 'yRec',
+                stack: 'crm',
+                order: 4,
+                datalabels: { display: false }
+              },
+              {
+                type: 'bar',
+                label: 'E-mail & Outros',
+                data: mEmailOutros,
+                backgroundColor: '#8a8e96',
+                yAxisID: 'yRec',
+                stack: 'crm',
+                order: 5,
+                datalabels: { display: false }
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (ctx.dataset.label === 'Share CRM') return `Share CRM: ${ctx.raw}%`;
+                    return `${ctx.dataset.label}: ${fmtR(ctx.raw)}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
+              yRec: {
+                stacked: true,
+                position: 'left',
+                min: customMinEvol,
+                max: customMaxEvol,
+                ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+                grid: { color: GRID }
+              },
+              yShare: {
+                position: 'right',
+                ticks: { callback: v => v + '%', color: TICK, font: TF },
+                grid: { display: false },
+                min: 0,
+                max: Math.max(...mShare) > 10 ? undefined : 10
+              }
+            }
+          }
+        });
 
-        const key = localStorage.getItem('guanabara_gemini_key');
+        // 5. Renderizar Gráfico 2: Eficiência CRM (Receita x Sessões x Conversão)
+        dc('crm-eficiencia-mensal');
+        leg('leg-crm-eficiencia-mensal', [
+          { color: 'rgba(31, 209, 150, 0.4)', label: 'Receita CRM' },
+          { color: '#f0a030', label: 'Sessões' },
+          { color: '#1fd196', label: 'Conversão CRM' }
+        ]);
+        
+        charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
+          data: {
+            labels: mLabels,
+            datasets: [
+              {
+                type: 'line',
+                label: 'Conversão CRM',
+                data: mConvTotal,
+                borderColor: '#1fd196',
+                borderDash: [4, 4],
+                backgroundColor: 'transparent',
+                yAxisID: 'yConv',
+                pointRadius: 3,
+                pointBackgroundColor: '#1fd196',
+                borderWidth: 2,
+                order: 1,
+                datalabels: {
+                  display: true,
+                  align: 'top',
+                  color: '#1fd196',
+                  font: { size: 9, family: "'DM Mono',monospace" },
+                  formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+                }
+              },
+              {
+                type: 'line',
+                label: 'Sessões',
+                data: mSessTotal,
+                borderColor: '#f0a030',
+                backgroundColor: 'transparent',
+                yAxisID: 'ySess',
+                pointRadius: 4,
+                pointBackgroundColor: '#f0a030',
+                borderWidth: 2,
+                order: 2,
+                datalabels: { display: false }
+              },
+              {
+                type: 'bar',
+                label: 'Receita CRM',
+                data: mCrmTotal,
+                backgroundColor: 'rgba(31, 209, 150, 0.4)',
+                yAxisID: 'yRec',
+                order: 3,
+                datalabels: { display: false }
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (ctx.dataset.label === 'Conversão CRM') return `Conversão CRM: ${ctx.raw.toFixed(2)}%`;
+                    if (ctx.dataset.label === 'Sessões') return `Sessões: ${fmt(ctx.raw)}`;
+                    return `Receita CRM: ${fmtR(ctx.raw)}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+              yRec: {
+                position: 'left',
+                ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+                grid: { color: GRID }
+              },
+              ySess: {
+                position: 'right',
+                ticks: { callback: v => fmt(v), color: TICK, font: TF },
+                grid: { display: false }
+              },
+              yConv: {
+                display: false,
+                min: 0
+              }
+            }
+          }
+        });
+      }
+
         if (key) {
           const dataIniFmt = ini ? ini.split('-').reverse().join('/') : '—';
           const dataFimFmt = fim ? fim.split('-').reverse().join('/') : '—';
@@ -2215,6 +2172,25 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
           console.error('Erro ao verificar status:', e);
         }
       }, 10000);
+    }
+
+    // --- Listeners de Editores de Eixo e Filtros ---
+    if (!window.listenersInitialized) {
+      document.querySelectorAll('.axis-editor input').forEach(input => {
+        input.addEventListener('input', updateAll);
+      });
+
+      document.getElementById('btn-reset-evol-axis').addEventListener('click', () => {
+        document.getElementById('evolRevMin').value = '';
+        document.getElementById('evolRevMax').value = '';
+        updateAll();
+      });
+
+      document.getElementById('f-inapp').addEventListener('change', updateAll);
+      document.getElementById('f-cmp').addEventListener('change', updateAll);
+      document.getElementById('f-granularity').addEventListener('change', updateAll);
+
+      window.listenersInitialized = true;
     }
 
     resetFilters(true);
