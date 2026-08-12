@@ -628,9 +628,10 @@
   </header>
 
   <div class="tab-bar">
-    <a href="index.html" class="tab-btn">Visão Geral</a>
-    <a href="dashboard_crm.html" class="tab-btn active">Análise CRM</a>
-  </div>
+      <a href="index.html" class="tab-btn">Visão Geral</a>
+      <a href="dashboard_graficos.html" class="tab-btn">Gráficos CRM</a>
+      <a href="dashboard_crm.html" class="tab-btn active">Análise CRM</a>
+    </div>
 
   <div class="page">
 
@@ -668,12 +669,7 @@
         </select>
       </div>
 
-      <div class="filter-group"><label>Granularidade</label>
-        <select id="f-granularity">
-          <option value="daily">Diária</option>
-          <option value="monthly" selected>Mensal</option>
-        </select>
-      </div>
+      
 
       <div class="filter-group"><label>Buscar Campanha</label>
         <input type="text" id="f-campanha" placeholder="Digite o nome..." style="width:180px;" />
@@ -1072,64 +1068,6 @@
       setKpi('k-crm-conversao', crmConv, v => v > 0 ? v.toFixed(2) + '%' : '—', 'conv', kpiB);
       setKpi('k-crm-ticket', crmTicket, v => v > 0 ? fmtR(v) : '—', 'tkt', kpiB);
 
-      // --- Site vs App in CRM ---
-      const siteCrmData = data.filter(r => r.pdv === 'Site');
-      const appCrmData = data.filter(r => r.pdv === 'App');
-      
-      const siteCrmRec = siteCrmData.reduce((a, r) => a + r.receita, 0);
-      const siteCrmSess = siteCrmData.reduce((a, r) => a + r.sessoes, 0);
-      const siteCrmTrans = siteCrmData.reduce((a, r) => a + r.trans, 0);
-      const siteCrmConv = siteCrmSess > 0 ? (siteCrmTrans / siteCrmSess * 100) : 0;
-      const siteCrmPct = crmRec > 0 ? (siteCrmRec / crmRec * 100) : 0;
-      
-      const appCrmRec = appCrmData.reduce((a, r) => a + r.receita, 0);
-      const appCrmSess = appCrmData.reduce((a, r) => a + r.sessoes, 0);
-      const appCrmTrans = appCrmData.reduce((a, r) => a + r.trans, 0);
-      const appCrmConv = appCrmSess > 0 ? (appCrmTrans / appCrmSess * 100) : 0;
-      const appCrmPct = crmRec > 0 ? (appCrmRec / crmRec * 100) : 0;
-
-      document.getElementById('v-crm-site-rec').textContent = fmtR(siteCrmRec);
-      document.getElementById('v-crm-site-det').textContent = `${siteCrmPct.toFixed(1)}% do CRM · Conv: ${siteCrmConv.toFixed(2)}%`;
-      document.getElementById('v-crm-app-rec').textContent = fmtR(appCrmRec);
-      document.getElementById('v-crm-app-det').textContent = `${appCrmPct.toFixed(1)}% do CRM · Conv: ${appCrmConv.toFixed(2)}%`;
-
-      dc('crm-pdv-donut');
-      leg('leg-crm-pdv', [{ color: C.site, label: 'Site' }, { color: C.app, label: 'App' }]);
-      charts['crm-pdv-donut'] = new Chart(document.getElementById('chart-crm-pdv-donut'), {
-        type: 'doughnut',
-        data: { labels: ['Site', 'App'], datasets: [{ data: [siteCrmRec, appCrmRec], backgroundColor: [C.site, C.app], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
-      });
-
-      // --- Automático vs Manual in CRM ---
-      const autoData = data.filter(r => isAutomated(r));
-      const manualData = data.filter(r => !isAutomated(r));
-      
-      const autoRec = autoData.reduce((a, r) => a + r.receita, 0);
-      const autoSess = autoData.reduce((a, r) => a + r.sessoes, 0);
-      const autoTrans = autoData.reduce((a, r) => a + r.trans, 0);
-      const autoConv = autoSess > 0 ? (autoTrans / autoSess * 100) : 0;
-      const autoPct = crmRec > 0 ? (autoRec / crmRec * 100) : 0;
-      
-      const manualRec = manualData.reduce((a, r) => a + r.receita, 0);
-      const manualSess = manualData.reduce((a, r) => a + r.sessoes, 0);
-      const manualTrans = manualData.reduce((a, r) => a + r.trans, 0);
-      const manualConv = manualSess > 0 ? (manualTrans / manualSess * 100) : 0;
-      const manualPct = crmRec > 0 ? (manualRec / crmRec * 100) : 0;
-
-      document.getElementById('v-crm-auto-rec').textContent = fmtR(autoRec);
-      document.getElementById('v-crm-auto-det').textContent = `${autoPct.toFixed(1)}% do CRM · Conv: ${autoConv.toFixed(2)}%`;
-      document.getElementById('v-crm-manual-rec').textContent = fmtR(manualRec);
-      document.getElementById('v-crm-manual-det').textContent = `${manualPct.toFixed(1)}% do CRM · Conv: ${manualConv.toFixed(2)}%`;
-
-      dc('crm-disparos');
-      leg('leg-crm-disparos', [{ color: C.crm, label: 'Automático' }, { color: '#4b8ef5', label: 'Manual' }]);
-      charts['crm-disparos'] = new Chart(document.getElementById('chart-crm-disparos'), {
-        type: 'doughnut',
-        data: { labels: ['Automático', 'Manual'], datasets: [{ data: [autoRec, manualRec], backgroundColor: [C.crm, '#4b8ef5'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
-      });
-
       // --- Origens de Sessão CRM ---
       const midiaRecMap = {}, midiaSessMap = {}, midiaTransMap = {};
       data.forEach(r => {
@@ -1141,37 +1079,7 @@
       });
 
       const sortedMidias = Object.keys(midiaRecMap).sort((a, b) => midiaRecMap[b] - midiaRecMap[a]);
-      const topCrmMidias = sortedMidias.slice(0, 8);
-      const topCrmMidiasData = topCrmMidias.map(m => midiaRecMap[m]);
-
-      dc('crm-performance');
-      charts['crm-performance'] = new Chart(document.getElementById('chart-crm-performance'), {
-        type: 'bar',
-        data: {
-          labels: topCrmMidias,
-          datasets: [{
-            data: topCrmMidiasData,
-            backgroundColor: topCrmMidias.map((_, i) => palette[i % palette.length]),
-            borderRadius: 4
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              color: '#f0f0ee', font: TFS,
-              formatter: v => {
-                const pct = crmRec > 0 ? (v / crmRec * 100).toFixed(1) : 0;
-                return v > 0 ? `${fmtC(v)} (${pct}%)` : '';
-              },
-              anchor: 'end', align: 'right'
-            }
-          },
-          scales: { x: { display: false, min: 0 }, y: { ticks: { color: TICK, font: TFS }, grid: { display: false } } }
-        }
-      });
-
+      
       // Populate Origens Table
       const origensTbody = document.querySelector('#table-crm-origens tbody');
       if (origensTbody) {
@@ -2123,19 +2031,11 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
 
     // --- Listeners de Editores de Eixo e Filtros ---
     if (!window.listenersInitialized) {
-      document.querySelectorAll('.axis-editor input').forEach(input => {
-        input.addEventListener('input', updateAll);
-      });
 
-      document.getElementById('btn-reset-evol-axis').addEventListener('click', () => {
-        document.getElementById('evolRevMin').value = '';
-        document.getElementById('evolRevMax').value = '';
-        updateAll();
-      });
 
       document.getElementById('f-inapp').addEventListener('change', updateAll);
       document.getElementById('f-cmp').addEventListener('change', updateAll);
-      document.getElementById('f-granularity').addEventListener('change', updateAll);
+      
 
       window.listenersInitialized = true;
     }
