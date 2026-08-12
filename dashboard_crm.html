@@ -820,61 +820,8 @@
       </div>
     </div>
 
-    <!-- Nova Linha Unificada de Gráficos: Evolução e Eficiência -->
-    <p class="section-title">Evolução & Eficiência de CRM</p>
-    <div class="row" style="margin-bottom: 25px;">
-      <!-- Card 1: Evolução Histórica (Receita & Share) -->
-      <div class="col" style="flex: 1.6; min-width: 0;">
-        <div class="card">
-          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <div class="card-title" id="title-crm-evolucao">Evolução de Receita & Share CRM</div>
-              <div class="legend" id="leg-crm-evolucao"></div>
-            </div>
-            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-evolucao-mom">Calculando evolução...</div>
-          </div>
-          
-          <!-- Ajustar eixos da evolução -->
-          <details class="axis-editor" style="margin: 0 15px 10px 15px; font-size:11px; color:var(--text2);">
-            <summary style="cursor:pointer; font-weight:600; outline:none; user-select:none; color:var(--text2);">⚙️ Ajustar Limites do Eixo Y</summary>
-            <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top:8px; padding: 10px; background: rgba(255,255,255,0.02); border-radius:6px; border: 1px solid var(--border2);">
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Mínimo (R$)</label>
-                <input id="evolRevMin" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
-              </div>
-              <div style="display:flex; flex-direction:column; gap:4px;">
-                <label style="font-size:9px; color:var(--text3); text-transform:uppercase;">Máximo (R$)</label>
-                <input id="evolRevMax" type="number" step="1000" placeholder="Auto" style="background:var(--bg2); border:1px solid var(--border2); color:var(--text); padding:4px 8px; border-radius:4px; font-size:11px; width:100px;" />
-              </div>
-              <button type="button" class="cmp-btn" id="btn-reset-evol-axis" style="height:26px; font-size:10px; padding:0 10px;">Voltar ao automático</button>
-            </div>
-          </details>
-
-          <div style="position:relative; width:100%; height:300px;">
-            <canvas id="chart-crm-evolucao"></canvas>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Card 2: Eficiência CRM -->
-      <div class="col" style="flex: 1.1; min-width: 0;">
-        <div class="card">
-          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <div class="card-title">Eficiência CRM (Receita x Tráfego x Conversão)</div>
-              <div class="legend" id="leg-crm-eficiencia-mensal"></div>
-            </div>
-            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-eficiencia-mom">Receita x Sessões x Conversão</div>
-          </div>
-          <div style="position:relative; width:100%; height:300px; padding-top: 25px;">
-            <canvas id="chart-crm-eficiencia-mensal"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-
+        <!-- Divisor Visual -->
+    <div style='margin-bottom: 25px; border-bottom: 1px solid var(--border2);'></div>
     <!-- Highlights -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
       <p class="section-title" style="margin-bottom:0;">Highlights & Insights do Período Mapeado</p>
