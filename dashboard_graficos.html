@@ -1776,7 +1776,7 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
         skipEmptyLines: true,
         complete: function (results) {
           rawData = results.data.map(r => ({
-            date: String(r.Data || r.date || ''),
+            date: parseDate(r.Data || r.date || ''),
             pdv: String(r.PDV || r.pdv || ''),
             canal: String(r.Canal || r.canal || ''),
             midia: String(r.Midia || r.midia || ''),
@@ -1785,6 +1785,11 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
             sessoes: Number(r.Sessoes || r.sessoes || 0),
             trans: Number(r.Transacoes || r.transacoes || 0)
           }));
+          const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
+          const statusTxt = document.getElementById('status-txt');
+          if (statusTxt) {
+            statusTxt.textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo ? ultimo.split('-').reverse().join('/') : '—');
+          }
           updateAll();
         }
       });
