@@ -660,6 +660,13 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Campanhas In-Site</label>
+        <select id="f-insite">
+          <option value="with">Com In-Site</option>
+          <option value="without">Sem In-Site</option>
+        </select>
+      </div>
+
       <div class="filter-group"><label>Comparar com</label>
         <select id="f-cmp">
           <option value="none">Sem comparativo</option>
@@ -725,53 +732,13 @@
       </div>
     </div>
 
-    <!-- Divisão Automação vs Manual e Site vs App -->
-    <p class="section-title">Distribuição por Canal & Tipo de Disparo no CRM</p>
-    <div class="grid-2">
-      <!-- Site vs App -->
-      <div class="card">
-        <h3>Participação por Canal (Site vs App) no CRM</h3>
-        <div class="legend" id="leg-crm-pdv"></div>
-        <div style="position:relative;width:100%;height:180px"><canvas id="chart-crm-pdv-donut"></canvas></div>
-        <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Site (Web)</div>
-            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:var(--site);" id="v-crm-site-rec">—</div>
-            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-site-det">—</div>
-          </div>
-          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">App (Mobile)</div>
-            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:var(--app);" id="v-crm-app-rec">—</div>
-            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-app-det">—</div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Automático vs Manual -->
-      <div class="card">
-        <h3>Tipo de Disparo (Automático vs Manual) no CRM</h3>
-        <div class="legend" id="leg-crm-disparos"></div>
-        <div style="position:relative;width:100%;height:180px"><canvas id="chart-crm-disparos"></canvas></div>
-        <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Automático (Architect)</div>
-            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:var(--crm);" id="v-crm-auto-rec">—</div>
-            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-auto-det">—</div>
-          </div>
-          <div style="background:var(--bg3); padding:10px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Manual (Campanhas)</div>
-            <div style="font-size:15px; font-weight:bold; font-family:var(--mono); color:#4b8ef5;" id="v-crm-manual-rec">—</div>
-            <div style="font-size:10px; color:var(--text2); margin-top:2px;" id="v-crm-manual-det">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Origens de Sessão -->
     <p class="section-title">Análise de Origens / Mídias de Tráfego de CRM</p>
     <div class="card">
       <h3>Ranking de Faturamento de Origens/Mídias de CRM</h3>
-      <div style="position:relative;width:100%;height:220px;margin-bottom:15px;"><canvas id="chart-crm-performance"></canvas></div>
+      
       <div class="data-table-container">
         <table class="data-table" id="table-crm-origens">
           <thead>
@@ -903,8 +870,13 @@
     function isRowInApp(r) {
       const sm = String(r.midia || '').toLowerCase();
       const cmp = String(r.campanha || '').toLowerCase();
-      return sm.includes('insite') || sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
-             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app') || cmp.includes('insite');
+      return sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
+             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app');
+    }
+    function isRowInSite(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('insite') || cmp.includes('insite');
     }
 
     function isCRM(canal) { return String(canal).toUpperCase() === 'CRM' }
@@ -963,6 +935,10 @@
       const inappMode = document.getElementById('f-inapp').value;
       if (inappMode === 'without') {
         crmBase = crmBase.filter(r => !isRowInApp(r));
+      }
+      const insiteMode = document.getElementById('f-insite').value;
+      if (insiteMode === 'without') {
+        crmBase = crmBase.filter(r => !isRowInSite(r));
       }
 
       // 4. Apply Busca de Campanha filter
@@ -1232,8 +1208,8 @@
 
       function getCrmSubChannel(midia) {
         const m = String(midia || '').toLowerCase();
-        if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
         if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+        if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
         if (m.includes('whatsapp') || m.includes('wpp')) return 'WhatsApp';
         return 'E-mail & Outros';
       }
@@ -1331,6 +1307,8 @@
         
         let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
         if (inappMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
+        const insiteMode = document.getElementById('f-insite').value;
+        if (insiteMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInSite(r));
         if (disparo === 'auto') crmBaseB = crmBaseB.filter(r => isAutomated(r));
         else if (disparo === 'manual') crmBaseB = crmBaseB.filter(r => !isAutomated(r));
         if (campanhaBusca) crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
@@ -2034,6 +2012,7 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
 
 
       document.getElementById('f-inapp').addEventListener('change', updateAll);
+      document.getElementById('f-insite').addEventListener('change', updateAll);
       document.getElementById('f-cmp').addEventListener('change', updateAll);
       
 
