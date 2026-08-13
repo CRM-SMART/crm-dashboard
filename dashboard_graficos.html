@@ -2045,22 +2045,34 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
     }
 
     function loadData() {
-      Papa.parse('dados_dashboard.csv', {
-        download: true,
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: function (results) {
-          rawData = results.data.map(r => ({
-            date: parseDate(r.Data || r.date || ''),
-            pdv: String(r.PDV || r.pdv || ''),
-            canal: String(r.Canal || r.canal || ''),
-            midia: String(r.Midia || r.midia || ''),
-            campanha: String(r.Campanha || r.campanha || ''),
-            receita: Number(r.Receita || r.receita || 0),
-            sessoes: Number(r.Sessoes || r.sessoes || 0),
-            trans: Number(r.Transacoes || r.transacoes || 0)
-          }));
+      Papa.parse(CSV_URL, {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function (res) {
+          const sample = res.data[0] || {};
+          const K = {
+            pdv: findKey(sample, ['Ponto de Venda', 'Ponto de venda']),
+            date: findKey(sample, ['Data Ajustada', 'Data ajustada', 'Data']),
+            canal: findKey(sample, ['Origem Agrupada', 'Origem agrupada']),
+            origem: findKey(sample, ['Origem Resumida', 'Origem resumida']),
+            campanha: findKey(sample, ['Campanha da sessão', 'Campanha', 'Campaign']),
+            midia: findKey(sample, ['Origem / mídia da sessão', 'Origem / midia', 'Source / Medium']),
+            sessoes: findKey(sample, ['Sessões', 'Sessões', 'Sessoes', 'Sessions']),
+            trans: findKey(sample, ['Transações', 'Transacoes', 'Transações']),
+            receita: findKey(sample, ['Receita', 'receita'])
+          };
+          
+          rawData = res.data.map(r => ({
+            pdv: String(r[K.pdv] || '').trim(),
+            date: parseDate(r[K.date]),
+            canal: String(r[K.canal] || 'Others').trim(),
+            origem: String(r[K.origem] || '').trim(),
+            midia: String(r[K.midia] || '').trim(),
+            campanha: String(r[K.campanha] || '').trim(),
+            search_text: `${r[K.origem] || ''} ${r[K.campanha] || ''} ${r[K.midia] || ''}`.toLowerCase(),
+            sessoes: parseNum(r[K.sessoes]),
+            trans: parseNum(r[K.trans]),
+            receita: parseNum(r[K.receita])
+          })).filter(r => r.date && r.date.length >= 8);
           
           // Popular dropdown de mídias de CRM
           const crmRows = rawData.filter(r => isCRM(r.canal));
@@ -2089,6 +2101,7 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
           document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
 
           const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
+          maxDate = ultimo;
           const statusTxt = document.getElementById('status-txt');
           if (statusTxt) {
             statusTxt.textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo ? ultimo.split('-').reverse().join('/') : '—');
