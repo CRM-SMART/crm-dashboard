@@ -679,6 +679,13 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Granularidade</label>
+        <select id="f-granularity">
+          <option value="monthly">Mensal</option>
+          <option value="daily">Diário</option>
+        </select>
+      </div>
+
       
 
       <div class="filter-group"><label>Buscar Campanha</label>
@@ -1882,34 +1889,160 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
       }
     }
 
-    const modal = document.getElementById('config-modal');
-    const btnConfig = document.getElementById('btn-config-gemini');
-    const closeModal = document.querySelector('.close-modal');
-    const btnSaveKey = document.getElementById('btn-save-key');
-    const inputKey = document.getElementById('input-gemini-key');
+    // Event listeners para a configuração do Gemini e Atualização Manual
+    const panel = document.getElementById('gemini-config-panel');
+    const keyInput = document.getElementById('gemini-key-input');
+    const ghTokenInput = document.getElementById('github-token-input');
+    const btnTriggerUpdate = document.getElementById('btn-trigger-update');
 
+    // Carregar valores do localStorage ao carregar a página
+    if (localStorage.getItem('github_actions_token')) {
+      if (btnTriggerUpdate) btnTriggerUpdate.style.display = 'inline-flex';
+    }
+
+    const btnConfig = document.getElementById('btn-config-gemini');
     if (btnConfig) {
       btnConfig.addEventListener('click', () => {
-        inputKey.value = localStorage.getItem('guanabara_gemini_key') || '';
-        modal.style.display = 'flex';
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        keyInput.value = localStorage.getItem('guanabara_gemini_key') || '';
+        ghTokenInput.value = localStorage.getItem('github_actions_token') || '';
       });
     }
 
-    if (closeModal) {
-      closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
-    }
-
-    if (btnSaveKey) {
-      btnSaveKey.addEventListener('click', () => {
-        localStorage.setItem('guanabara_gemini_key', inputKey.value.trim());
-        modal.style.display = 'none';
+    const btnSaveGemini = document.getElementById('btn-save-gemini');
+    if (btnSaveGemini) {
+      btnSaveGemini.addEventListener('click', () => {
+        const key = keyInput.value.trim();
+        const token = ghTokenInput.value.trim();
+        
+        localStorage.setItem('guanabara_gemini_key', key);
+        localStorage.setItem('github_actions_token', token);
+        
+        if (token) {
+          if (btnTriggerUpdate) btnTriggerUpdate.style.display = 'inline-flex';
+        } else {
+          if (btnTriggerUpdate) btnTriggerUpdate.style.display = 'none';
+        }
+        panel.style.display = 'none';
         updateAll();
       });
     }
 
-    window.addEventListener('click', (e) => {
-      if (e.target === modal) modal.style.display = 'none';
-    });
+    const btnClearGemini = document.getElementById('btn-clear-gemini');
+    if (btnClearGemini) {
+      btnClearGemini.addEventListener('click', () => {
+        localStorage.removeItem('guanabara_gemini_key');
+        localStorage.removeItem('github_actions_token');
+        keyInput.value = '';
+        ghTokenInput.value = '';
+        if (btnTriggerUpdate) btnTriggerUpdate.style.display = 'none';
+        panel.style.display = 'none';
+        updateAll();
+      });
+    }
+
+    // Lógica de Atualização Manual via GitHub API
+    let pollingInterval = null;
+    if (btnTriggerUpdate) {
+      btnTriggerUpdate.addEventListener('click', async () => {
+        const token = localStorage.getItem('github_actions_token');
+        if (!token) {
+          alert('Por favor, configure o Token de Acesso do GitHub primeiro clicando em Configurações.');
+          return;
+        }
+        
+        btnTriggerUpdate.disabled = true;
+        btnTriggerUpdate.textContent = '⏳ Disparando...';
+        document.getElementById('status-txt').textContent = 'Disparando no GitHub...';
+        document.getElementById('status-txt').style.animation = 'pulse 1.5s infinite';
+
+        const url = 'https://api.github.com/repos/CRM-SMART/crm-dashboard/actions/workflows/daily_update.yml/dispatches';
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': `Bearer ${token}`,
+              'X-GitHub-Api-Version': '2022-11-28',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ref: 'main' })
+          });
+
+          if (response.status === 204) {
+            btnTriggerUpdate.textContent = '⏳ Executando...';
+            document.getElementById('status-txt').textContent = 'Fila do GitHub...';
+            startPollingUpdate(token);
+          } else {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || `Código HTTP ${response.status}`);
+          }
+        } catch (err) {
+          alert('Falha ao disparar atualização: ' + err.message + '\n\nVerifique se o token do GitHub está correto e tem permissão no repositório.');
+          btnTriggerUpdate.disabled = false;
+          btnTriggerUpdate.textContent = '🔄 Atualizar Dados';
+          document.getElementById('status-txt').textContent = 'Atualizado';
+          document.getElementById('status-txt').style.animation = 'none';
+        }
+      });
+    }
+
+    function startPollingUpdate(token) {
+      if (pollingInterval) clearInterval(pollingInterval);
+      
+      let attempts = 0;
+      pollingInterval = setInterval(async () => {
+        attempts++;
+        if (attempts > 30) {
+          clearInterval(pollingInterval);
+          alert('O tempo de atualização esgotou. Verifique o status das execuções diretamente no GitHub Actions.');
+          btnTriggerUpdate.disabled = false;
+          btnTriggerUpdate.textContent = '🔄 Atualizar Dados';
+          document.getElementById('status-txt').textContent = 'Atualizado';
+          document.getElementById('status-txt').style.animation = 'none';
+          return;
+        }
+
+        try {
+          const url = 'https://api.github.com/repos/CRM-SMART/crm-dashboard/actions/runs?workflow=daily_update.yml&per_page=1';
+          const res = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github+json'
+            }
+          });
+          const data = await res.json();
+          const run = data.workflow_runs && data.workflow_runs[0];
+          
+          if (run) {
+            const status = run.status;
+            const conclusion = run.conclusion;
+            
+            if (status === 'queued') {
+              document.getElementById('status-txt').textContent = 'Fila do GitHub...';
+            } else if (status === 'in_progress') {
+              document.getElementById('status-txt').textContent = 'Extraindo GA4...';
+            } else if (status === 'completed') {
+              clearInterval(pollingInterval);
+              if (conclusion === 'success') {
+                document.getElementById('status-txt').textContent = 'Sucesso! Recarregando...';
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              } else {
+                alert('O robô do GitHub falhou ao rodar a atualização. Verifique os logs no GitHub.');
+                btnTriggerUpdate.disabled = false;
+                btnTriggerUpdate.textContent = '🔄 Atualizar Dados';
+                document.getElementById('status-txt').textContent = 'Erro ao Atualizar';
+                document.getElementById('status-txt').style.animation = 'none';
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao verificar status:', e);
+        }
+      }, 10000);
+    }
 
     function loadData() {
       Papa.parse('dados_dashboard.csv', {
