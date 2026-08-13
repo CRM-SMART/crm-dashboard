@@ -1359,7 +1359,7 @@
             plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}` } } },
             scales: {
               x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
-              y: { min: customMinEvol, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
+              y: { min: customMinEvol !== undefined ? customMinEvol : 0, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
             }
           }
         });
@@ -1416,7 +1416,7 @@
             plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%` } } },
             scales: {
               x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
-              y: { ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
+              y: { min: 0, ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
             }
           }
         });
@@ -1495,7 +1495,7 @@
               yRec: {
                 stacked: true,
                 position: 'left',
-                min: customMinEvol,
+                min: customMinEvol !== undefined ? customMinEvol : 0,
                 max: customMaxEvol,
                 ticks: { callback: v => fmtC(v), color: TICK, font: TF },
                 grid: { color: GRID }
@@ -1585,11 +1585,13 @@
               x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
               yRec: {
                 position: 'left',
+                min: 0,
                 ticks: { callback: v => fmtC(v), color: TICK, font: TF },
                 grid: { color: GRID }
               },
               ySess: {
                 position: 'right',
+                min: 0,
                 ticks: { callback: v => fmt(v), color: TICK, font: TF },
                 grid: { display: false }
               },
@@ -1623,7 +1625,7 @@
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Sessões: ${fmt(ctx.raw)}` } } },
           scales: {
             x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
-            y: { ticks: { color: TICK, font: TF }, grid: { color: GRID } }
+            y: { min: 0, ticks: { color: TICK, font: TF }, grid: { color: GRID } }
           }
         }
       });
@@ -1652,7 +1654,7 @@
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Transações: ${fmt(ctx.raw)}` } } },
           scales: {
             x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
-            y: { ticks: { color: TICK, font: TF }, grid: { color: GRID } }
+            y: { min: 0, ticks: { color: TICK, font: TF }, grid: { color: GRID } }
           }
         }
       });
@@ -1686,7 +1688,7 @@
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Conversão: ${ctx.raw.toFixed(2)}%` } } },
           scales: {
             x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
-            y: { ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
+            y: { min: 0, ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
           }
         }
       });
@@ -1713,8 +1715,7 @@
       dc('crm-canal-share');
       leg('leg-crm-canal-share', [
         { color: '#4b8ef5', label: 'Site (Receita)' },
-        { color: '#1fd196', label: 'App (Receita)' },
-        { color: '#f07040', label: 'Share App (%)' }
+        { color: '#1fd196', label: 'App (Receita)' }
       ]);
 
       charts['crm-canal-share'] = new Chart(document.getElementById('chart-crm-canal-share'), {
@@ -1722,32 +1723,11 @@
           labels: mLabels,
           datasets: [
             {
-              type: 'line',
-              label: 'Share App (%)',
-              data: mAppShare,
-              borderColor: '#f07040',
-              backgroundColor: 'transparent',
-              yAxisID: 'yShare',
-              pointRadius: 4,
-              pointBackgroundColor: '#f07040',
-              borderWidth: 2,
-              order: 1,
-              datalabels: {
-                display: true,
-                align: 'top',
-                color: '#f07040',
-                font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
-                formatter: v => v > 0 ? v.toFixed(1) + '%' : ''
-              }
-            },
-            {
               type: 'bar',
               label: 'Site',
               data: mSiteRec,
               backgroundColor: '#4b8ef5',
-              yAxisID: 'yRec',
               stack: 'canal',
-              order: 2,
               datalabels: { display: false }
             },
             {
@@ -1755,9 +1735,7 @@
               label: 'App',
               data: mAppRec,
               backgroundColor: '#1fd196',
-              yAxisID: 'yRec',
               stack: 'canal',
-              order: 3,
               datalabels: { display: false }
             }
           ]
@@ -1768,29 +1746,18 @@
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: ctx => {
-                  if (ctx.dataset.label === 'Share App (%)') return `Share App: ${ctx.raw}%`;
-                  return `${ctx.dataset.label}: ${fmtR(ctx.raw)}`;
-                }
+                label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}`
               }
             }
           },
           scales: {
             x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
-            yRec: {
+            y: {
               stacked: true,
-              position: 'left',
+              min: 0,
               title: { display: true, text: 'Receita (R$)', color: TICK, font: TF },
               ticks: { callback: v => fmtC(v), color: TICK, font: TF },
               grid: { color: GRID }
-            },
-            yShare: {
-              position: 'right',
-              title: { display: true, text: 'Share App %', color: TICK, font: TF },
-              ticks: { callback: v => v + '%', color: TICK, font: TF },
-              grid: { display: false },
-              min: 0,
-              max: 100
             }
           }
         }
@@ -1826,7 +1793,7 @@
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Ticket Médio: ${fmtR(ctx.raw)}` } } },
           scales: {
             x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
-            y: { ticks: { callback: v => fmtR(v), color: TICK, font: TF }, grid: { color: GRID } }
+            y: { min: 0, ticks: { callback: v => fmtR(v), color: TICK, font: TF }, grid: { color: GRID } }
           }
         }
       });
