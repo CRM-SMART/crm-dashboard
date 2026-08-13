@@ -660,6 +660,13 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Campanhas In-Site</label>
+        <select id="f-insite">
+          <option value="with">Com In-Site</option>
+          <option value="without">Sem In-Site</option>
+        </select>
+      </div>
+
       <div class="filter-group"><label>Subcanal CRM</label>
         <select id="f-subcanal">
           <option value="all">Todos os Subcanais</option>
@@ -742,15 +749,15 @@
       </div>
     </div>
 
-    <!-- Linha de Gráficos 1: Evolução e Eficiência -->
-    <p class="section-title">Evolução & Eficiência de Faturamento</p>
+    <!-- Linha de Gráficos 1: Evolução e Detalhado -->
+    <p class="section-title">Evolução & Share de Faturamento CRM</p>
     <div class="row" style="margin-bottom: 25px;">
-      <!-- Card 1: Evolução Histórica (Receita & Share) -->
-      <div class="col" style="flex: 1.6; min-width: 0;">
+      <!-- Card 1: Evolução Histórica (Consolidado por Subcanal) -->
+      <div class="col" style="flex: 1.5; min-width: 0;">
         <div class="card">
           <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <div class="card-title" id="title-crm-evolucao">Evolução de Receita & Share CRM</div>
+              <div class="card-title" id="title-crm-evolucao">Evolução de Receita & Share CRM (Consolidado)</div>
               <div class="legend" id="leg-crm-evolucao"></div>
             </div>
             <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-evolucao-mom">Calculando evolução...</div>
@@ -777,18 +784,18 @@
         </div>
       </div>
       
-      <!-- Card 2: Eficiência CRM -->
-      <div class="col" style="flex: 1.1; min-width: 0;">
+      <!-- Card 1.5: Evolução por Origem & Mídia (Detalhado) -->
+      <div class="col" style="flex: 1.5; min-width: 0;">
         <div class="card">
           <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <div class="card-title">Eficiência CRM (Receita x Sessões x Conversão)</div>
-              <div class="legend" id="leg-crm-eficiencia-mensal"></div>
+              <div class="card-title">Evolução por Origem & Mídia (Detalhado)</div>
+              <div class="legend" id="leg-crm-detalhado" style="max-height: 48px; overflow-y: auto;"></div>
             </div>
-            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-eficiencia-mom">Receita x Sessões x Conversão</div>
+            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-detalhado-mom">Detalhamento por Origem & Mídia</div>
           </div>
           <div style="position:relative; width:100%; height:300px; padding-top: 25px;">
-            <canvas id="chart-crm-eficiencia-mensal"></canvas>
+            <canvas id="chart-crm-detalhado"></canvas>
           </div>
         </div>
       </div>
@@ -837,14 +844,14 @@
       </div>
     </div>
 
-    <!-- Linha de Gráficos 3: Faturamento por Canal e Ticket Médio -->
-    <p class="section-title">Participação de Canais e Ticket Médio CRM</p>
+    <!-- Linha de Gráficos 3: Faturamento por Canal, Ticket Médio e Eficiência -->
+    <p class="section-title">Participação de Canais, Ticket Médio e Eficiência CRM</p>
     <div class="row" style="margin-bottom: 25px;">
       <!-- Card 6: Share por Canal -->
-      <div class="col" style="flex: 1.4; min-width: 0;">
+      <div class="col" style="flex: 1; min-width: 0;">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Evolução de Faturamento & Share por Canal (Site vs App)</div>
+            <div class="card-title">Evolução de Faturamento por Canal (Site vs App)</div>
             <div class="legend" id="leg-crm-canal-share"></div>
           </div>
           <div style="position:relative; width:100%; height:300px;">
@@ -854,7 +861,7 @@
       </div>
 
       <!-- Card 7: Ticket Médio -->
-      <div class="col" style="flex: 1.1; min-width: 0;">
+      <div class="col" style="flex: 1; min-width: 0;">
         <div class="card">
           <div class="card-header">
             <div class="card-title">Evolução do Ticket Médio CRM</div>
@@ -862,6 +869,22 @@
           </div>
           <div style="position:relative; width:100%; height:300px;">
             <canvas id="chart-crm-ticket-evol"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Card 2: Eficiência CRM -->
+      <div class="col" style="flex: 1; min-width: 0;">
+        <div class="card">
+          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div class="card-title">Eficiência CRM (Receita x Sessões x Conversão)</div>
+              <div class="legend" id="leg-crm-eficiencia-mensal"></div>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-eficiencia-mom">Receita x Sessões x Conversão</div>
+          </div>
+          <div style="position:relative; width:100%; height:300px; padding-top: 25px;">
+            <canvas id="chart-crm-eficiencia-mensal"></canvas>
           </div>
         </div>
       </div>
@@ -952,8 +975,13 @@
     function isRowInApp(r) {
       const sm = String(r.midia || '').toLowerCase();
       const cmp = String(r.campanha || '').toLowerCase();
-      return sm.includes('insite') || sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
-             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app') || cmp.includes('insite');
+      return sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
+             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app');
+    }
+    function isRowInSite(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('insite') || cmp.includes('insite');
     }
     function norm(s) { 
       return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); 
@@ -1006,10 +1034,29 @@
       return s; 
     }
 
+    function getSubChannelConsolidated(midia) {
+      const m = String(midia || '').toLowerCase();
+      if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+      if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
+      if (m.includes('whatsapp') || m.includes('wpp') || m.includes('whats')) return 'WhatsApp';
+      if (m.includes('email') || m.includes('e-mail') || m.includes('architect_email')) return 'E-mail';
+      if (m.includes('sms') || m.includes('mobile_messaging')) return 'SMS';
+      return 'Outros';
+    }
+
+    const subchannelColors = {
+      'App Push': '#a078f0',
+      'Web Push': '#4b8ef5',
+      'WhatsApp': '#1fd196',
+      'E-mail': '#e85b85',
+      'SMS': '#f2a63d',
+      'Outros': '#8a8e96'
+    };
+
     function getCrmSubChannel(midia) {
       const m = String(midia || '').toLowerCase();
-      if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
       if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+      if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
       if (m.includes('whatsapp') || m.includes('wpp')) return 'WhatsApp';
       return 'E-mail & Outros';
     }
@@ -1111,6 +1158,7 @@
       const pdv = document.getElementById('f-pdv').value;
       const disparo = document.getElementById('f-disparo').value;
       const inappMode = document.getElementById('f-inapp').value;
+      const insiteMode = document.getElementById('f-insite').value;
       const cmp = document.getElementById('f-cmp').value;
       const subcanal = document.getElementById('f-subcanal').value;
       const granularity = document.getElementById('f-granularity').value;
@@ -1124,6 +1172,7 @@
 
       let crmFiltered = baseA.filter(r => isCRM(r.canal));
       if (inappMode === 'without') crmFiltered = crmFiltered.filter(r => !isRowInApp(r));
+      if (insiteMode === 'without') crmFiltered = crmFiltered.filter(r => !isRowInSite(r));
       if (disparo === 'auto') crmFiltered = crmFiltered.filter(r => isAutomated(r));
       else if (disparo === 'manual') crmFiltered = crmFiltered.filter(r => !isAutomated(r));
       if (campanhaBusca) crmFiltered = crmFiltered.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
@@ -1198,6 +1247,14 @@
             crmTotal: 0,
             sessTotal: 0,
             transTotal: 0,
+            subMap: {
+              'App Push': 0,
+              'Web Push': 0,
+              'WhatsApp': 0,
+              'E-mail': 0,
+              'SMS': 0,
+              'Outros': 0
+            },
             mMap: {}
           };
         }
@@ -1205,6 +1262,9 @@
         groupMap[key].crmTotal += r.receita;
         groupMap[key].sessTotal += r.sessoes;
         groupMap[key].transTotal += r.trans;
+        
+        const sub = getSubChannelConsolidated(r.midia);
+        groupMap[key].subMap[sub] = (groupMap[key].subMap[sub] || 0) + r.receita;
         
         const m = r.midia || 'Outros';
         groupMap[key].mMap[m] = (groupMap[key].mMap[m] || 0) + r.receita;
@@ -1279,8 +1339,12 @@
         document.getElementById('sub-crm-eficiencia-mom').textContent = 'Métricas de eficiência';
       }
 
-      // --- GRÁFICO 1: EVOLUÇÃO ---
+      // --- GRÁFICO 1: EVOLUÇÃO E DETALHAMENTO ---
+      dc('crm-evolucao');
+      dc('crm-detalhado');
+
       if (cmp !== 'none') {
+        // Modo comparativo: exibe apenas evolução de faturamento em linhas (atual vs comparativo)
         const bDates = getPeriodB_Dates(ini, fim, cmp);
         const getEvolData = (dList, startD, endD) => {
           const map = {};
@@ -1326,6 +1390,7 @@
         
         let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
         if (inappMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
+        if (insiteMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInSite(r));
         if (disparo === 'auto') crmBaseB = crmBaseB.filter(r => isAutomated(r));
         else if (disparo === 'manual') crmBaseB = crmBaseB.filter(r => !isAutomated(r));
         if (campanhaBusca) crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
@@ -1338,11 +1403,11 @@
         }
         
         const resB = getEvolData(dataB, bDates.bIni, bDates.bFim);
+
         document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita CRM (Comparativo)`;
         const labelA = 'Período Atual';
         const labelB = cmp === 'wow' ? 'Semana Anterior' : cmp === 'mom' ? 'Mês Anterior' : 'Ano Anterior';
         
-        dc('crm-evolucao');
         leg('leg-crm-evolucao', [{ color: '#1fd196', label: labelA }, { color: '#8a8e96', label: labelB }]);
         
         charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
@@ -1363,8 +1428,15 @@
             }
           }
         });
-        
-        // Renderizar Eficiência com Comparativo
+
+        // Ocultar/Limpar o gráfico detalhado no modo comparativo para evitar confusão
+        document.getElementById('leg-crm-detalhado').innerHTML = '';
+        document.getElementById('sub-crm-detalhado-mom').textContent = 'O modo detalhado está disponível apenas sem comparativo.';
+        charts['crm-detalhado'] = new Chart(document.getElementById('chart-crm-detalhado'), {
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Lógica de Eficiência comparativo
         const getConvData = (dList, startD, endD) => {
           const sessMap = {}, transMap = {};
           dList.forEach(r => {
@@ -1375,7 +1447,6 @@
               transMap[key] = (transMap[key] || 0) + r.trans;
             }
           });
-          
           const keysList = [];
           if (granularity === 'monthly') {
             let curr = new Date(startD);
@@ -1395,13 +1466,9 @@
           }
           return keysList.map(k => sessMap[k] > 0 ? (transMap[k] / sessMap[k] * 100) : 0);
         };
-        
         const convA = getConvData(data, ini, fim);
         const convB = getConvData(dataB, bDates.bIni, bDates.bFim);
-        
-        dc('crm-eficiencia-mensal');
         leg('leg-crm-eficiencia-mensal', [{ color: '#1fd196', label: labelA }, { color: '#8a8e96', label: labelB }]);
-        
         charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
           type: 'line',
           data: {
@@ -1420,17 +1487,13 @@
             }
           }
         });
-        
-      } else {
-        document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita & Share CRM`;
-        
-        const activeMídias = new Set();
-        data.forEach(r => { if (r.midia) activeMídias.add(r.midia); });
-        const mídiaList = Array.from(activeMídias);
 
-        dc('crm-evolucao');
+      } else {
+        // --- 1. GRÁFICO DE CONSOLIDADO (SUB-CANAL) ---
+        document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita & Share CRM (Consolidado)`;
         
-        const datasets = [
+        const subList = ['App Push', 'Web Push', 'E-mail', 'WhatsApp', 'SMS', 'Outros'];
+        const datasetsCons = [
           {
             type: 'line',
             label: 'Share CRM',
@@ -1445,20 +1508,24 @@
             datalabels: {
               display: true,
               align: 'top',
-              color: '#f07040',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 3, bottom: 3, left: 6, right: 6 },
               font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
               formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
             }
           }
         ];
 
-        mídiaList.forEach((m, idx) => {
-          const color = sourceColors[m] || `hsl(${(idx * 360 / mídiaList.length) % 360}, 65%, 55%)`;
-          const sData = sortedKeys.map(k => Math.round(groupMap[k].mMap[m] || 0));
-          
-          datasets.push({
+        subList.forEach((sub, idx) => {
+          const color = subchannelColors[sub] || '#8a8e96';
+          const sData = sortedKeys.map(k => Math.round(groupMap[k].subMap[sub] || 0));
+          datasetsCons.push({
             type: 'bar',
-            label: m,
+            label: sub,
             data: sData,
             backgroundColor: color,
             yAxisID: 'yRec',
@@ -1468,15 +1535,15 @@
           });
         });
 
-        const legendItems = mídiaList.map((m, idx) => ({
-          color: sourceColors[m] || `hsl(${(idx * 360 / mídiaList.length) % 360}, 65%, 55%)`,
-          label: m
+        const legendItemsCons = subList.map(sub => ({
+          color: subchannelColors[sub] || '#8a8e96',
+          label: sub
         }));
-        legendItems.unshift({ color: '#f07040', label: 'Share CRM' });
-        leg('leg-crm-evolucao', legendItems);
+        legendItemsCons.unshift({ color: '#f07040', label: 'Share CRM' });
+        leg('leg-crm-evolucao', legendItemsCons);
 
         charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
-          data: { labels: mLabels, datasets: datasets },
+          data: { labels: mLabels, datasets: datasetsCons },
           options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
@@ -1511,7 +1578,56 @@
           }
         });
 
-        // --- GRÁFICO 2: EFICIÊNCIA ---
+        // --- 2. GRÁFICO DE DETALHAMENTO (ORIGEM & MÍDIA) ---
+        const activeMídias = new Set();
+        data.forEach(r => { if (r.midia) activeMídias.add(r.midia); });
+        const mídiaList = Array.from(activeMídias);
+
+        const datasetsDet = [];
+        mídiaList.forEach((m, idx) => {
+          const color = `hsl(${(idx * 360 / Math.max(mídiaList.length, 1)) % 360}, 65%, 55%)`;
+          const sData = sortedKeys.map(k => Math.round(groupMap[k].mMap[m] || 0));
+          datasetsDet.push({
+            type: 'bar',
+            label: m,
+            data: sData,
+            backgroundColor: color,
+            stack: 'crm_det',
+            datalabels: { display: false }
+          });
+        });
+
+        const legendItemsDet = mídiaList.map((m, idx) => ({
+          color: `hsl(${(idx * 360 / Math.max(mídiaList.length, 1)) % 360}, 65%, 55%)`,
+          label: m
+        }));
+        leg('leg-crm-detalhado', legendItemsDet);
+        document.getElementById('sub-crm-detalhado-mom').textContent = 'Quebra de faturamento por origem e mídia de CRM';
+
+        charts['crm-detalhado'] = new Chart(document.getElementById('chart-crm-detalhado'), {
+          data: { labels: mLabels, datasets: datasetsDet },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}`
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
+              y: {
+                stacked: true,
+                min: 0,
+                ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+                grid: { color: GRID }
+              }
+            }
+          }
+        });
+              // --- GRÁFICO 2: EFICIÊNCIA ---
         dc('crm-eficiencia-mensal');
         leg('leg-crm-eficiencia-mensal', [
           { color: 'rgba(31, 209, 150, 0.4)', label: 'Receita CRM' },
@@ -1538,8 +1654,13 @@
                 datalabels: {
                   display: true,
                   align: 'top',
-                  color: '#1fd196',
-                  font: { size: 9, family: "'DM Mono',monospace" },
+                  color: '#fff',
+                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  borderWidth: 1,
+                  borderRadius: 4,
+                  padding: { top: 3, bottom: 3, left: 6, right: 6 },
+                  font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
                   formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
                 }
               },
@@ -1782,8 +1903,13 @@
             datalabels: {
               display: true,
               align: 'top',
-              color: '#f2a63d',
-              font: { size: 9, family: "'DM Mono',monospace" },
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 3, bottom: 3, left: 6, right: 6 },
+              font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
               formatter: v => v > 0 ? fmtR(v) : ''
             }
           }]
@@ -2088,9 +2214,11 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
         document.getElementById('f-pdv').value = '';
         document.getElementById('f-disparo').value = '';
         document.getElementById('f-inapp').value = 'with';
+        document.getElementById('f-insite').value = 'with';
         document.getElementById('f-cmp').value = 'none';
         document.getElementById('f-subcanal').value = 'all';
         document.getElementById('f-granularity').value = 'monthly';
+        document.getElementById('f-insite').value = 'with';
         document.getElementById('f-campanha').value = '';
         if (window.clearOrigensMultiSelect) window.clearOrigensMultiSelect();
         updateAll();
@@ -2113,6 +2241,7 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
       document.getElementById('f-pdv').addEventListener('change', updateAll);
       document.getElementById('f-disparo').addEventListener('change', updateAll);
       document.getElementById('f-inapp').addEventListener('change', updateAll);
+      document.getElementById('f-insite').addEventListener('change', updateAll);
       document.getElementById('f-cmp').addEventListener('change', updateAll);
       document.getElementById('f-subcanal').addEventListener('change', updateAll);
       document.getElementById('f-granularity').addEventListener('change', updateAll);
