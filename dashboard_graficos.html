@@ -830,10 +830,11 @@
       </div>
     </div>
 
-    <!-- Linha de Gráficos 3: Faturamento por Canal (Site vs App) -->
-    <p class="section-title">Participação de Canais no Faturamento CRM</p>
+    <!-- Linha de Gráficos 3: Faturamento por Canal e Ticket Médio -->
+    <p class="section-title">Participação de Canais e Ticket Médio CRM</p>
     <div class="row" style="margin-bottom: 25px;">
-      <div class="col" style="flex: 1; min-width: 0;">
+      <!-- Card 6: Share por Canal -->
+      <div class="col" style="flex: 1.4; min-width: 0;">
         <div class="card">
           <div class="card-header">
             <div class="card-title">Evolução de Faturamento & Share por Canal (Site vs App)</div>
@@ -841,6 +842,19 @@
           </div>
           <div style="position:relative; width:100%; height:300px;">
             <canvas id="chart-crm-canal-share"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 7: Ticket Médio -->
+      <div class="col" style="flex: 1.1; min-width: 0;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Evolução do Ticket Médio CRM</div>
+            <div class="legend" id="leg-crm-ticket-evol"></div>
+          </div>
+          <div style="position:relative; width:100%; height:300px;">
+            <canvas id="chart-crm-ticket-evol"></canvas>
           </div>
         </div>
       </div>
@@ -886,12 +900,6 @@
 
   <script>
     const CSV_URL = './dados_dashboard.csv';
-    const GRP_COLORS = { Direct: '#a078f0', 'Not Set': '#8a8e96', CRM: '#1fd196', Paid: '#f07040', Organic: '#f0a030', Referral: '#40f0d0', Blog: '#f040a0', Others: '#4b8ef5' };
-    const palette = ['#e05070', '#e0b040', '#40e0c0', '#9050e0', '#f06090', '#70c040', '#8090a0'];
-    const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030' };
-    const GRID = 'rgba(255,255,255,0.06)', TICK = '#555960';
-    const TF = { size: 11, family: "'DM Mono',monospace" }, TFS = { size: 10, family: "'DM Mono',monospace" };
-    let rawData = [], charts = {}, maxDate = '';
     const C = { crm: '#a078f0', site: '#4b8ef5', app: '#1fd196', total: '#f2a63d' };
     const TF = { family: "'DM Sans', sans-serif", size: 10 };
     const TICK = '#8a8e96';
@@ -912,7 +920,84 @@
       'insider / insite': '#fed330'
     };
 
+    let rawData = [], charts = {}, maxDate = '';
+
     Chart.register(ChartDataLabels);
+
+    // --- FUNÇÕES AUXILIARES ---
+    function parseLocal(dStr) {
+      if (!dStr) return new Date();
+      const [y, m, d] = dStr.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function delta(a, b) { 
+      if (b === 0) return null; 
+      return (a - b) / Math.abs(b) * 100; 
+    }
+    function isCRM(canal) { 
+      return String(canal || '').toUpperCase() === 'CRM'; 
+    }
+    function isAutomated(r) {
+      const txt = String(r.search_text || r.campanha || '').toLowerCase();
+      const m = String(r.midia || '').toLowerCase();
+      return txt.includes('architect') || txt.includes('architecht') || m.includes('architect') || m.includes('firebase') || m.includes('pushnews');
+    }
+    function isRowInApp(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('insite') || sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
+             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app') || cmp.includes('insite');
+    }
+    function norm(s) { 
+      return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); 
+    }
+    function findKey(row, candidates) { 
+      const keys = Object.keys(row); 
+      for (const c of candidates) { 
+        const nc = norm(c); 
+        const k = keys.find(k => norm(k) === nc); 
+        if (k) return k; 
+      } 
+      return candidates[0]; 
+    }
+    function fmt(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      return Intl.NumberFormat('pt-BR').format(Math.round(v)); 
+    }
+    function fmtR(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v)); 
+    }
+    function fmtC(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; 
+      if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; 
+      return fmtR(v); 
+    }
+    function parseNum(s) { 
+      if (!s && s !== 0) return 0; 
+      s = String(s).trim().replace(/\s/g, ''); 
+      if (s.includes('.') && s.includes(',')) { 
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); 
+        else s = s.replace(/,/g, ''); 
+      } else if (s.includes(',') && !s.includes('.')) { 
+        s = s.replace(',', '.'); 
+      } 
+      return parseFloat(s) || 0; 
+    }
+    function parseDate(d) { 
+      if (!d) return null; 
+      const s = String(d).trim(); 
+      if (s.includes('/')) { 
+        const p = s.split('/'); 
+        if (p.length === 3) { 
+          if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; 
+          return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`; 
+        } 
+      } 
+      if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; 
+      return s; 
+    }
 
     function getCrmSubChannel(midia) {
       const m = String(midia || '').toLowerCase();
@@ -938,6 +1023,28 @@
           <span style="font-size:10px; color:var(--text2);">${it.label}</span>
         </div>
       `).join('');
+    }
+
+    function getPeriodB_Dates(ini, fim, cmp) {
+      const aStart = new Date(ini);
+      const aEnd = new Date(fim);
+      const diff = aEnd - aStart;
+      let bStart, bEnd;
+
+      if (cmp === 'wow') {
+        bStart = new Date(aStart); bStart.setDate(bStart.getDate() - 7);
+        bEnd = new Date(aEnd); bEnd.setDate(bEnd.getDate() - 7);
+      } else if (cmp === 'mom') {
+        bStart = new Date(aStart); bStart.setMonth(bStart.getMonth() - 1);
+        bEnd = new Date(aEnd); bEnd.setMonth(bEnd.getMonth() - 1);
+      } else if (cmp === 'yoy') {
+        bStart = new Date(aStart); bStart.setFullYear(bStart.getFullYear() - 1);
+        bEnd = new Date(aEnd); bEnd.setFullYear(bEnd.getFullYear() - 1);
+      }
+      return {
+        bIni: bStart.toISOString().slice(0, 10),
+        bFim: bEnd.toISOString().slice(0, 10)
+      };
     }
 
     function getFilteredBase(startD, endD, pdv) {
@@ -1121,6 +1228,7 @@
         const crmFaturamento = groupMap[k].crmTotal || 0;
         return totalFaturamento > 0 ? Number((crmFaturamento / totalFaturamento * 100).toFixed(2)) : 0;
       });
+      const mTicket = sortedKeys.map(k => groupMap[k].transTotal > 0 ? Number((groupMap[k].crmTotal / groupMap[k].transTotal).toFixed(2)) : 0);
 
       // Calcular MoM
       if (sortedKeys.length >= 2) {
@@ -1681,6 +1789,41 @@
         }
       });
 
+      // --- GRÁFICO 7: EVOLUÇÃO DO TICKET MÉDIO CRM ---
+      dc('crm-ticket-evol');
+      leg('leg-crm-ticket-evol', [{ color: '#f2a63d', label: 'Ticket Médio' }]);
+      charts['crm-ticket-evol'] = new Chart(document.getElementById('chart-crm-ticket-evol'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'Ticket Médio',
+            data: mTicket,
+            borderColor: '#f2a63d',
+            backgroundColor: 'rgba(242, 166, 61, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2,
+            datalabels: {
+              display: true,
+              align: 'top',
+              color: '#f2a63d',
+              font: { size: 9, family: "'DM Mono',monospace" },
+              formatter: v => v > 0 ? fmtR(v) : ''
+            }
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Ticket Médio: ${fmtR(ctx.raw)}` } } },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: { ticks: { callback: v => fmtR(v), color: TICK, font: TF }, grid: { color: GRID } }
+          }
+        }
+      });
+
       // Gemini insights
       const key = localStorage.getItem('guanabara_gemini_key');
       if (key) {
@@ -1785,6 +1928,33 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
             sessoes: Number(r.Sessoes || r.sessoes || 0),
             trans: Number(r.Transacoes || r.transacoes || 0)
           }));
+          
+          // Popular dropdown de mídias de CRM
+          const crmRows = rawData.filter(r => isCRM(r.canal));
+          const crmMidiasMap = {};
+          crmRows.forEach(r => {
+            if (r.midia) {
+              crmMidiasMap[r.midia] = (crmMidiasMap[r.midia] || 0) + r.receita;
+            }
+          });
+          const crmMidiasValidas = Object.keys(crmMidiasMap).sort((a, b) => crmMidiasMap[b] - crmMidiasMap[a]);
+
+          const list = document.getElementById('ms-list');
+          if (list) {
+            let html = `
+              <div style="padding:8px; border-bottom:1px solid var(--border); display:flex; gap:5px; flex-direction:column; position:sticky; top:0; background:var(--bg2); z-index:10;">
+                <button type="button" class="cmp-btn" onclick="document.querySelectorAll('#ms-list input').forEach(cb => cb.checked = false); updateAll();" style="width:100%; border-color:var(--border2);">Limpar Seleção</button>
+                <button type="button" class="cmp-btn" onclick="document.getElementById('ms-list').classList.remove('open');" style="width:100%; background:var(--accent); color:#000; border-color:var(--accent); font-weight:500;">OK / Fechar</button>
+              </div>
+            `;
+            crmMidiasValidas.forEach(o => {
+              html += '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(crmMidiasMap[o]) + '</div></div></label>';
+            });
+            list.innerHTML = html;
+          }
+
+          document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
+
           const ultimo = rawData.map(r => r.date).sort().reverse()[0] || '';
           const statusTxt = document.getElementById('status-txt');
           if (statusTxt) {
@@ -1845,6 +2015,6 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
 
     resetFilters(true);
     loadData();
-    </script>
+</script>
 </body>
 </html>
