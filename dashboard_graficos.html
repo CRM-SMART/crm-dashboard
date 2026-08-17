@@ -1435,13 +1435,20 @@
       const funnelLabels = ['Enviados (Insider)', 'Entregues (Insider)', 'Cliques (Insider)', 'Sessões (GA)', 'Carrinho (GA)', 'Checkout (GA)', 'Compra (GA)'];
       const funnelValues = [enviosTotal, entregasTotal, cliquesTotal, crmSess, carrinhosTotal, checkoutsTotal, crmTrans];
 
+      // Gerar barras flutuantes centradas para criar formato visual de Funil (Pirâmide)
+      const maxVal = Math.max(...funnelValues) || 1;
+      const floatingValues = funnelValues.map(v => {
+        const half = v / 2;
+        return [-half, half];
+      });
+
       charts['crm-funil'] = new Chart(document.getElementById('chart-crm-funil'), {
         type: 'bar',
         data: {
           labels: funnelLabels,
           datasets: [{
             label: 'Volume',
-            data: funnelValues,
+            data: floatingValues,
             backgroundColor: [
               'rgba(160, 120, 240, 0.85)',
               'rgba(75, 142, 245, 0.85)',
@@ -1458,18 +1465,43 @@
               align: 'right',
               anchor: 'end',
               color: '#fff',
-              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
               borderColor: 'rgba(255, 255, 255, 0.1)',
               borderWidth: 1,
               borderRadius: 4,
               padding: { top: 3, bottom: 3, left: 6, right: 6 },
-              font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
+              font: { size: 9.5, weight: 'bold', family: "'DM Mono',monospace" },
               formatter: (v, ctx) => {
-                if (v === 0) return '—';
-                const firstVal = funnelValues[0];
-                if (ctx.dataIndex === 0) return fmt(v);
-                const pct = firstVal > 0 ? ((v / firstVal) * 100).toFixed(1) + '%' : '0%';
-                return `${fmt(v)} (${pct})`;
+                const absVal = funnelValues[ctx.dataIndex];
+                if (absVal === 0) return '—';
+                
+                // Formatar texto de conversão
+                if (ctx.dataIndex === 0) {
+                  return fmt(absVal);
+                }
+                
+                // Conversão em relação ao passo anterior do funil
+                const prevVal = funnelValues[ctx.dataIndex - 1];
+                const prevPct = prevVal > 0 ? ((absVal / prevVal) * 100).toFixed(1) + '%' : '0%';
+                
+                // Conversão global (do topo do funil populado)
+                // Encontra a primeira etapa populada
+                let baseVal = funnelValues[0];
+                let labelRef = 'do disparado';
+                if (baseVal === 0) {
+                  // Se não há dados da Insider ainda, usa Sessões (GA) como base
+                  baseVal = funnelValues[3];
+                  labelRef = 'das sessões';
+                }
+                const globalPct = baseVal > 0 ? ((absVal / baseVal) * 100).toFixed(2) + '%' : '0%';
+                
+                if (ctx.dataIndex >= 3 && funnelValues[0] === 0) {
+                  // Sem Insider: foca apenas nas taxas GA
+                  if (ctx.dataIndex === 3) return fmt(absVal);
+                  return `${fmt(absVal)} (${prevPct} conv. anterior)`;
+                }
+                
+                return `${fmt(absVal)} (${prevPct} do ant. | ${globalPct} ${labelRef})`;
               }
             }
           }]
@@ -1478,10 +1510,28 @@
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const absVal = funnelValues[ctx.dataIndex];
+                  return `Volume: ${fmt(absVal)}`;
+                }
+              }
+            }
+          },
           scales: {
-            x: { min: 0, grid: { display: false }, ticks: { color: TICK, font: TF } },
-            y: { grid: { display: false }, ticks: { color: TICK, font: TF } }
+            x: { 
+              min: -maxVal/2 - (maxVal*0.1), 
+              max: maxVal/2 + (maxVal*0.1),
+              grid: { display: false }, 
+              ticks: { display: false } 
+            },
+            y: { 
+              grid: { display: false }, 
+              ticks: { color: TICK, font: TF } 
+            }
           }
         }
       });
