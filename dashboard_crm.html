@@ -645,6 +645,17 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Segmentação CRM</label>
+        <select id="f-segmento">
+          <option value="all">Todos os Segmentos</option>
+          <option value="ativos">Ativos</option>
+          <option value="emqueda">Em Queda</option>
+          <option value="frios">Frios</option>
+          <option value="geral">Geral</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+
       <div class="filter-group"><label>Tipo de Disparo</label>
         <select id="f-disparo">
           <option value="">Todos</option>
@@ -729,6 +740,16 @@
         <div class="kpi-label">Ticket Médio CRM</div>
         <div class="kpi-value" id="k-crm-ticket">—</div>
         <div class="kpi-sub" style="opacity: 0;">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Disparados CRM</div>
+        <div class="kpi-value" id="k-crm-envios">—</div>
+        <div class="kpi-sub" id="s-crm-envios">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">CTR Médio CRM</div>
+        <div class="kpi-value" id="k-crm-ctr">—</div>
+        <div class="kpi-sub" id="s-crm-ctr">—</div>
       </div>
     </div>
 
@@ -879,6 +900,14 @@
       return sm.includes('insite') || cmp.includes('insite');
     }
 
+    function getCrmSegment(campName) {
+      const name = String(campName || '').toLowerCase();
+      if (name.includes('ativos_pushapp_operacional') || name.includes('_ativos')) return 'ativos';
+      if (name.includes('emqueda_pushapp_operacional') || name.includes('_emqueda') || name.includes('_campanha_emqueda')) return 'emqueda';
+      if (name.includes('basefria_pushapp_operacional') || name.includes('_basefria') || name.includes('_frios') || name.includes('_campanha_frios')) return 'frios';
+      if (name.includes('basegeral_apppush') || name.includes('_basegeral') || name.includes('_geral')) return 'geral';
+      return 'outros';
+    }
     function isCRM(canal) { return String(canal).toUpperCase() === 'CRM' }
     function isAutomated(r) {
       const txt = String(r.search_text || '').toLowerCase();
@@ -923,6 +952,10 @@
 
       // 2. Filter base data to CRM only
       let crmBase = dataBase.filter(r => isCRM(r.canal));
+      const segmentFilter = document.getElementById('f-segmento').value;
+      if (segmentFilter !== 'all') {
+        crmBase = crmBase.filter(r => getCrmSegment(r.campanha) === segmentFilter);
+      }
 
       // 3. Apply Tipo de Disparo filter
       if (disparo === 'auto') {
@@ -1309,6 +1342,10 @@
         if (inappMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
         const insiteMode = document.getElementById('f-insite').value;
         if (insiteMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInSite(r));
+        const segmentFilter = document.getElementById('f-segmento').value;
+        if (segmentFilter !== 'all') {
+          crmBaseB = crmBaseB.filter(r => getCrmSegment(r.campanha) === segmentFilter);
+        }
         if (disparo === 'auto') crmBaseB = crmBaseB.filter(r => isAutomated(r));
         else if (disparo === 'manual') crmBaseB = crmBaseB.filter(r => !isAutomated(r));
         if (campanhaBusca) crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
@@ -2013,6 +2050,7 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
 
       document.getElementById('f-inapp').addEventListener('change', updateAll);
       document.getElementById('f-insite').addEventListener('change', updateAll);
+      document.getElementById('f-segmento').addEventListener('change', updateAll);
       document.getElementById('f-cmp').addEventListener('change', updateAll);
       
 
