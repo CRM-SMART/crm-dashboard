@@ -16,7 +16,7 @@ def get_config():
         return json.load(f)
 
 def run():
-    print("Iniciando extracao de estatisticas da Insider...")
+    print("Iniciando extracao de estatisticas da Insider (Sem filtros)...")
     try:
         config = get_config()
     except Exception as e:
@@ -70,11 +70,9 @@ def run():
                         "Entregas": int(row["Entregas"] or 0),
                         "Cliques": int(row["Cliques"] or 0)
                     }
-            print(f"[+] Carregadas {len(existing_data)} campanhas historicas do CSV.")
         except Exception as e:
             print(f"[-] Erro ao ler {OUTPUT_FILE}: {e}")
             
-    # Processar novos dados do dia
     hoje_str = datetime.now().strftime('%Y-%m-%d')
     updates_count = 0
     new_count = 0
@@ -85,16 +83,11 @@ def run():
             continue
             
         envios = int(camp.get("delivery_count", 0))
-        entregas = int(camp.get("delivery_count", 0)) # Bulk API considera entregues = enviados
+        entregas = int(camp.get("delivery_count", 0))
         cliques = int(camp.get("session_count", 0))
         
-        # Ignorar campanhas de teste que nao sejam do app
-        name_lower = name.lower()
-        if not any(x in name_lower for x in ["ativos", "basefria", "emqueda", "basegeral", "apppush", "pushapp", "geral"]):
-            continue
-            
+        # LOGAR TODOS OS DISPAROS RETORNADOS PELA API SEM FILTRO DE NOME
         if name in existing_data:
-            # Atualizar se os numeros cresceram
             existing_data[name]["Envios"] = max(existing_data[name]["Envios"], envios)
             existing_data[name]["Entregas"] = max(existing_data[name]["Entregas"], entregas)
             existing_data[name]["Cliques"] = max(existing_data[name]["Cliques"], cliques)
@@ -108,7 +101,7 @@ def run():
             }
             new_count += 1
             
-    # Salvar dados de volta no CSV
+    # Salvar de volta no CSV
     try:
         with open(OUTPUT_FILE, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -121,7 +114,7 @@ def run():
                     metrics["Entregas"],
                     metrics["Cliques"]
                 ])
-        print(f"[+] Salvo com sucesso! {new_count} novas, {updates_count} atualizadas. Total no CSV: {len(existing_data)}")
+        print(f"[+] Salvo! {new_count} novas, {updates_count} atualizadas. Total no CSV: {len(existing_data)}")
     except Exception as e:
         print(f"[-] Erro ao salvar {OUTPUT_FILE}: {e}")
 
