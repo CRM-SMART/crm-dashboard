@@ -34,7 +34,7 @@ def run():
     headers = [
         "Ponto de Venda", "Data", "Origem / mídia da sessão", 
         "Campanha da sessão", "Sessões", "Transações", "Receita",
-        "Origem Agrupada"
+        "Origem Agrupada", "Adições ao Carrinho", "Checkouts"
     ]
     csv_rows = []
 
@@ -55,7 +55,9 @@ def run():
                 metrics=[
                     Metric(name="sessions"),
                     Metric(name="transactions"),
-                    Metric(name="purchaseRevenue")
+                    Metric(name="purchaseRevenue"),
+                    Metric(name="addToCarts"),
+                    Metric(name="checkouts")
                 ],
                 date_ranges=[DateRange(start_date="2025-01-01", end_date="today")],
                 limit=limit_per_page,
@@ -76,9 +78,11 @@ def run():
                     
                     source_medium = row.dimension_values[1].value
                     campaign = row.dimension_values[2].value
-                    sessions = row.metric_values[0].value
-                    transactions = row.metric_values[1].value
-                    revenue = row.metric_values[2].value
+                    sessions = int(row.metric_values[0].value or 0)
+                    transactions = int(row.metric_values[1].value or 0)
+                    revenue = float(row.metric_values[2].value or 0)
+                    add_to_cart = int(row.metric_values[3].value or 0)
+                    checkout = int(row.metric_values[4].value or 0)
                     
                     if source_medium in ["(not set)", "", None]:
                         source_medium = "(not set)"
@@ -107,7 +111,8 @@ def run():
 
                     csv_rows.append([
                         prop_name, date_val, source_medium, campaign,
-                        sessions, transactions, revenue, origem_agrupada
+                        sessions, transactions, revenue, origem_agrupada,
+                        add_to_cart, checkout
                     ])
                     
                 if num_rows < limit_per_page:
