@@ -645,6 +645,17 @@
         </select>
       </div>
 
+      <div class="filter-group"><label>Segmentação CRM</label>
+        <select id="f-segmento">
+          <option value="all">Todos os Segmentos</option>
+          <option value="ativos">Ativos</option>
+          <option value="emqueda">Em Queda</option>
+          <option value="frios">Frios</option>
+          <option value="geral">Geral</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+
       <div class="filter-group"><label>Tipo de Disparo</label>
         <select id="f-disparo">
           <option value="">Todos</option>
@@ -746,6 +757,46 @@
         <div class="kpi-label">Ticket Médio CRM</div>
         <div class="kpi-value" id="k-crm-ticket">—</div>
         <div class="kpi-sub" id="s-crm-ticket">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Disparados CRM</div>
+        <div class="kpi-value" id="k-crm-envios">—</div>
+        <div class="kpi-sub" id="s-crm-envios">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">CTR Médio CRM</div>
+        <div class="kpi-value" id="k-crm-ctr">—</div>
+        <div class="kpi-sub" id="s-crm-ctr">—</div>
+      </div>
+    </div>
+
+    <!-- Linha de Gráficos 0: Funil & CTR -->
+    <p class="section-title">Funil de Conversão & CTR Diário do CRM</p>
+    <div class="row" style="margin-bottom: 25px;">
+      <!-- Card Funil -->
+      <div class="col" style="flex: 1.5; min-width: 0;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Funil de Vendas CRM (Insider ➔ GA4)</div>
+            <div class="legend" id="leg-crm-funil"></div>
+          </div>
+          <div style="position:relative; width:100%; height:300px;">
+            <canvas id="chart-crm-funil"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card CTR Diário -->
+      <div class="col" style="flex: 1.5; min-width: 0;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Evolução do CTR Diário CRM %</div>
+            <div class="legend" id="leg-crm-ctr-daily"></div>
+          </div>
+          <div style="position:relative; width:100%; height:300px;">
+            <canvas id="chart-crm-ctr-daily"></canvas>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -964,6 +1015,15 @@
       if (b === 0) return null; 
       return (a - b) / Math.abs(b) * 100; 
     }
+    function getCrmSegment(campName) {
+      const name = String(campName || '').toLowerCase();
+      if (name.includes('ativos_pushapp_operacional') || name.includes('_ativos')) return 'ativos';
+      if (name.includes('emqueda_pushapp_operacional') || name.includes('_emqueda') || name.includes('_campanha_emqueda')) return 'emqueda';
+      if (name.includes('basefria_pushapp_operacional') || name.includes('_basefria') || name.includes('_frios') || name.includes('_campanha_frios')) return 'frios';
+      if (name.includes('basegeral_apppush') || name.includes('_basegeral') || name.includes('_geral')) return 'geral';
+      return 'outros';
+    }
+
     function isCRM(canal) { 
       return String(canal || '').toUpperCase() === 'CRM'; 
     }
@@ -1036,6 +1096,7 @@
 
     function getSubChannelConsolidated(midia) {
       const m = String(midia || '').toLowerCase();
+      if (m.includes('insite') || m.includes('in-app') || m.includes('inapp') || m.includes('in_app')) return 'In Site/In App';
       if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
       if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
       if (m.includes('whatsapp') || m.includes('wpp') || m.includes('whats')) return 'WhatsApp';
@@ -1050,6 +1111,7 @@
       'WhatsApp': '#1fd196',
       'E-mail': '#e85b85',
       'SMS': '#f2a63d',
+      'In Site/In App': '#fcd34d',
       'Outros': '#8a8e96'
     };
 
@@ -1159,6 +1221,7 @@
       const disparo = document.getElementById('f-disparo').value;
       const inappMode = document.getElementById('f-inapp').value;
       const insiteMode = document.getElementById('f-insite').value;
+      const segmentFilter = document.getElementById('f-segmento').value;
       const cmp = document.getElementById('f-cmp').value;
       const subcanal = document.getElementById('f-subcanal').value;
       const granularity = document.getElementById('f-granularity').value;
@@ -1173,6 +1236,9 @@
       let crmFiltered = baseA.filter(r => isCRM(r.canal));
       if (inappMode === 'without') crmFiltered = crmFiltered.filter(r => !isRowInApp(r));
       if (insiteMode === 'without') crmFiltered = crmFiltered.filter(r => !isRowInSite(r));
+      if (segmentFilter !== 'all') {
+        crmFiltered = crmFiltered.filter(r => getCrmSegment(r.campanha) === segmentFilter);
+      }
       if (disparo === 'auto') crmFiltered = crmFiltered.filter(r => isAutomated(r));
       else if (disparo === 'manual') crmFiltered = crmFiltered.filter(r => !isAutomated(r));
       if (campanhaBusca) crmFiltered = crmFiltered.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
@@ -1183,6 +1249,18 @@
         const selSet = new Set(window.selectedOrigens);
         data = crmFiltered.filter(r => selSet.has(r.midia));
       }
+
+      // Filtrar base da Insider
+      let insiderFiltered = rawInsider.filter(r => {
+        if (!r.date || r.date < ini || r.date > fim) return false;
+        if (segmentFilter !== 'all' && getCrmSegment(r.campanha) !== segmentFilter) return false;
+        return true;
+      });
+
+      const enviosTotal = insiderFiltered.reduce((acc, r) => acc + r.envios, 0);
+      const entregasTotal = insiderFiltered.reduce((acc, r) => acc + r.entregas, 0);
+      const cliquesTotal = insiderFiltered.reduce((acc, r) => acc + r.cliques, 0);
+      const crmCtr = entregasTotal > 0 ? (cliquesTotal / entregasTotal * 100) : 0;
 
       // KPIs
       const crmRec = data.reduce((acc, r) => acc + r.receita, 0);
@@ -1212,6 +1290,11 @@
       document.getElementById('s-crm-conversao').textContent = 'Eficiência de conversão';
       setKpi('k-crm-ticket', crmTicket, v => v > 0 ? fmtR(v) : '—', 'tkt', baseB);
       document.getElementById('s-crm-ticket').textContent = 'Valor médio por pedido';
+      
+      setKpi('k-crm-envios', enviosTotal, fmt, 'envios', baseB);
+      document.getElementById('s-crm-envios').textContent = 'Total de Pushs Enviados';
+      setKpi('k-crm-ctr', crmCtr, v => v > 0 ? v.toFixed(2) + '%' : '—', 'ctr', baseB);
+      document.getElementById('s-crm-ctr').textContent = 'Taxa de Clique Média (Insider)';
 
       // -------------------------------------------------------------
       // --- LOGICA DE RENDERIZAÇÃO DOS GRÁFICOS ---
@@ -1253,6 +1336,7 @@
               'WhatsApp': 0,
               'E-mail': 0,
               'SMS': 0,
+              'In Site/In App': 0,
               'Outros': 0
             },
             mMap: {}
@@ -1339,6 +1423,134 @@
         document.getElementById('sub-crm-eficiencia-mom').textContent = 'Métricas de eficiência';
       }
 
+      // --- GRÁFICO 0.1: FUNIL DE VENDAS CRM ---
+      dc('crm-funil');
+      const carrinhosTotal = data.reduce((acc, r) => acc + (r.carrinhos || 0), 0);
+      const checkoutsTotal = data.reduce((acc, r) => acc + (r.checkouts || 0), 0);
+
+      leg('leg-crm-funil', [
+        { color: 'rgba(75, 142, 245, 0.85)', label: 'Volume por Etapa' }
+      ]);
+
+      const funnelLabels = ['Enviados (Insider)', 'Entregues (Insider)', 'Cliques (Insider)', 'Sessões (GA)', 'Carrinho (GA)', 'Checkout (GA)', 'Compra (GA)'];
+      const funnelValues = [enviosTotal, entregasTotal, cliquesTotal, crmSess, carrinhosTotal, checkoutsTotal, crmTrans];
+
+      charts['crm-funil'] = new Chart(document.getElementById('chart-crm-funil'), {
+        type: 'bar',
+        data: {
+          labels: funnelLabels,
+          datasets: [{
+            label: 'Volume',
+            data: funnelValues,
+            backgroundColor: [
+              'rgba(160, 120, 240, 0.85)',
+              'rgba(75, 142, 245, 0.85)',
+              'rgba(31, 209, 150, 0.85)',
+              'rgba(240, 160, 48, 0.85)',
+              'rgba(232, 91, 133, 0.85)',
+              'rgba(252, 211, 77, 0.85)',
+              'rgba(138, 142, 150, 0.85)'
+            ],
+            borderRadius: 4,
+            barThickness: 24,
+            datalabels: {
+              display: true,
+              align: 'right',
+              anchor: 'end',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 3, bottom: 3, left: 6, right: 6 },
+              font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: (v, ctx) => {
+                if (v === 0) return '—';
+                const firstVal = funnelValues[0];
+                if (ctx.dataIndex === 0) return fmt(v);
+                const pct = firstVal > 0 ? ((v / firstVal) * 100).toFixed(1) + '%' : '0%';
+                return `${fmt(v)} (${pct})`;
+              }
+            }
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { min: 0, grid: { display: false }, ticks: { color: TICK, font: TF } },
+            y: { grid: { display: false }, ticks: { color: TICK, font: TF } }
+          }
+        }
+      });
+
+      // --- GRÁFICO 0.2: CTR DIÁRIO CRM ---
+      dc('crm-ctr-daily');
+      
+      const insiderGroupMap = {};
+      insiderFiltered.forEach(r => {
+        if (!r.date) return;
+        const key = keyFn(r.date);
+        if (key) {
+          if (!insiderGroupMap[key]) {
+            insiderGroupMap[key] = { envios: 0, entregas: 0, cliques: 0 };
+          }
+          insiderGroupMap[key].envios += r.envios;
+          insiderGroupMap[key].entregas += r.entregas;
+          insiderGroupMap[key].cliques += r.cliques;
+        }
+      });
+
+      const mCtrDaily = sortedKeys.map(k => {
+        const group = insiderGroupMap[k];
+        if (!group || group.entregas === 0) return 0;
+        return Number((group.cliques / group.entregas * 100).toFixed(2));
+      });
+
+      leg('leg-crm-ctr-daily', [
+        { color: '#1fd196', label: 'CTR Diário %' }
+      ]);
+
+      charts['crm-ctr-daily'] = new Chart(document.getElementById('chart-crm-ctr-daily'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'CTR %',
+            data: mCtrDaily,
+            borderColor: '#1fd196',
+            backgroundColor: 'rgba(31, 209, 150, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2,
+            datalabels: {
+              display: true,
+              align: 'top',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 3, bottom: 3, left: 6, right: 6 },
+              font: { size: 9, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+            }
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: { min: 0, ticks: { callback: v => v + '%', color: TICK, font: TF }, grid: { color: GRID } }
+          }
+        }
+      });
+
       // --- GRÁFICO 1: EVOLUÇÃO E DETALHAMENTO ---
       dc('crm-evolucao');
       dc('crm-detalhado');
@@ -1391,6 +1603,9 @@
         let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
         if (inappMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
         if (insiteMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInSite(r));
+        if (segmentFilter !== 'all') {
+          crmBaseB = crmBaseB.filter(r => getCrmSegment(r.campanha) === segmentFilter);
+        }
         if (disparo === 'auto') crmBaseB = crmBaseB.filter(r => isAutomated(r));
         else if (disparo === 'manual') crmBaseB = crmBaseB.filter(r => !isAutomated(r));
         if (campanhaBusca) crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
@@ -1492,7 +1707,7 @@
         // --- 1. GRÁFICO DE CONSOLIDADO (SUB-CANAL) ---
         document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita & Share CRM (Consolidado)`;
         
-        const subList = ['App Push', 'Web Push', 'E-mail', 'WhatsApp', 'SMS', 'Outros'];
+        const subList = ['App Push', 'Web Push', 'E-mail', 'WhatsApp', 'SMS', 'In Site/In App', 'Outros'];
         const datasetsCons = [
           {
             type: 'line',
@@ -2137,6 +2352,8 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
       }, 10000);
     }
 
+    let rawInsider = [];
+
     function loadData() {
       Papa.parse(CSV_URL, {
         download: true, header: true, skipEmptyLines: true,
@@ -2151,7 +2368,9 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
             midia: findKey(sample, ['Origem / mídia da sessão', 'Origem / midia', 'Source / Medium']),
             sessoes: findKey(sample, ['Sessões', 'Sessões', 'Sessoes', 'Sessions']),
             trans: findKey(sample, ['Transações', 'Transacoes', 'Transações']),
-            receita: findKey(sample, ['Receita', 'receita'])
+            receita: findKey(sample, ['Receita', 'receita']),
+            carrinhos: findKey(sample, ['Adições ao Carrinho', 'Adições ao carrinho', 'carrinho', 'addToCarts']),
+            checkouts: findKey(sample, ['Checkouts', 'checkouts'])
           };
           
           rawData = res.data.map(r => ({
@@ -2164,8 +2383,38 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
             search_text: `${r[K.origem] || ''} ${r[K.campanha] || ''} ${r[K.midia] || ''}`.toLowerCase(),
             sessoes: parseNum(r[K.sessoes]),
             trans: parseNum(r[K.trans]),
-            receita: parseNum(r[K.receita])
+            receita: parseNum(r[K.receita]),
+            carrinhos: parseNum(r[K.carrinhos]),
+            checkouts: parseNum(r[K.checkouts])
           })).filter(r => r.date && r.date.length >= 8);
+          
+          loadInsiderData();
+        }
+      });
+    }
+
+    function loadInsiderData() {
+      Papa.parse('dados_insider.csv', {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function (res) {
+          rawInsider = res.data.map(r => ({
+            date: parseDate(r.Data || r.date || ''),
+            campanha: String(r.Campanha || '').trim(),
+            envios: parseNum(r.Envios),
+            entregas: parseNum(r.Entregas),
+            cliques: parseNum(r.Cliques)
+          })).filter(r => r.date && r.date.length >= 8);
+          
+          finishDataLoad();
+        },
+        error: function() {
+          rawInsider = [];
+          finishDataLoad();
+        }
+      });
+    }
+
+    function finishDataLoad() {
           
           // Popular dropdown de mídias de CRM
           const crmRows = rawData.filter(r => isCRM(r.canal));
@@ -2200,8 +2449,6 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
             statusTxt.textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo ? ultimo.split('-').reverse().join('/') : '—');
           }
           updateAll();
-        }
-      });
     }
 
     function resetFilters(isFirstLoad = false) {
@@ -2215,10 +2462,12 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
         document.getElementById('f-disparo').value = '';
         document.getElementById('f-inapp').value = 'with';
         document.getElementById('f-insite').value = 'with';
+        document.getElementById('f-segmento').value = 'all';
         document.getElementById('f-cmp').value = 'none';
         document.getElementById('f-subcanal').value = 'all';
         document.getElementById('f-granularity').value = 'monthly';
         document.getElementById('f-insite').value = 'with';
+        document.getElementById('f-segmento').value = 'all';
         document.getElementById('f-campanha').value = '';
         if (window.clearOrigensMultiSelect) window.clearOrigensMultiSelect();
         updateAll();
@@ -2242,6 +2491,7 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
       document.getElementById('f-disparo').addEventListener('change', updateAll);
       document.getElementById('f-inapp').addEventListener('change', updateAll);
       document.getElementById('f-insite').addEventListener('change', updateAll);
+      document.getElementById('f-segmento').addEventListener('change', updateAll);
       document.getElementById('f-cmp').addEventListener('change', updateAll);
       document.getElementById('f-subcanal').addEventListener('change', updateAll);
       document.getElementById('f-granularity').addEventListener('change', updateAll);
