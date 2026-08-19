@@ -631,7 +631,7 @@
       <a href="index.html" class="tab-btn">Visão Geral</a>
       <a href="dashboard_graficos.html" class="tab-btn active">Gráficos CRM</a>
       <a href="dashboard_crm.html" class="tab-btn">Análise CRM</a>
-      </div>
+    </div>
 
   <div class="page">
 
@@ -770,7 +770,7 @@
       </div>
     </div>
 
-    <!-- Linha de Gráficos 0: Funis de Conversão -->
+        <!-- Linha de Gráficos 0: Funis de Conversão -->
     <p class="section-title">Funis de Conversão CRM (Disparos vs. Navegação)</p>
     <div class="row" style="margin-bottom: 25px;">
       <!-- Card Funil Insider -->
@@ -799,8 +799,8 @@
         </div>
       </div>
     </div>
-
-    <!-- Linha de Gráficos 1: Evolução e Detalhado -->
+    
+    <!-- Linha de Gráficos 1: Faturamento Consolidado & CTR Diário -->
     <p class="section-title">Evolução de Receita & Desempenho CTR</p>
     <div class="row" style="margin-bottom: 25px;">
       <!-- Card Consolidado -->
@@ -866,7 +866,7 @@
       </div>
     </div>
     
-    <!-- Linha de Gráficos 2: Sessões, Transações e Conversão -->
+<!-- Linha de Gráficos 2: Sessões, Transações e Conversão -->
     <p class="section-title">Tendências de Sessões, Vendas e Eficiência</p>
     <div class="row" style="margin-bottom: 25px;">
       <!-- Card 3: Sessões -->
@@ -909,7 +909,7 @@
       </div>
     </div>
 
-    <!-- Linha de Gráficos 3: Faturamento por Canal, Ticket Médio e Eficiência -->
+        <!-- Linha de Gráficos 3: Participação de Canal & Ticket Médio -->
     <p class="section-title">Participação de Canal & Ticket Médio CRM</p>
     <div class="row" style="margin-bottom: 25px;">
       <!-- Card Canal Share -->
@@ -940,7 +940,1282 @@
     </div>
     
   <script>
-    // Gemini insights
+    const CSV_URL = './dados_dashboard.csv';
+    const C = { crm: '#a078f0', site: '#4b8ef5', app: '#1fd196', total: '#f2a63d' };
+    const TF = { family: "'DM Sans', sans-serif", size: 10 };
+    const TICK = '#8a8e96';
+    const GRID = 'rgba(255,255,255,0.05)';
+
+    const sourceColors = {
+      'insider / apppush': '#a078f0', 
+      'insider / architect_whatsapp': '#1fd196', 
+      'Firebase / notification': '#f2a63d', 
+      'insider / web_push': '#4b8ef5', 
+      'pushnews / pushnotification': '#3ca0e6', 
+      'insider / architect_email': '#e85b85', 
+      'insider / architect_apppush': '#8854d0', 
+      'insider / architect_web_push': '#3867d6', 
+      'pushnews / web_push': '#2bcbba', 
+      'insider / email': '#eb3b5a', 
+      'insider / mobile_messaging': '#a5b1c2', 
+      'insider / insite': '#fed330'
+    };
+
+    let rawData = [], charts = {}, maxDate = '';
+
+    Chart.register(ChartDataLabels);
+
+    // --- FUNÇÕES AUXILIARES ---
+    function parseLocal(dStr) {
+      if (!dStr) return new Date();
+      const [y, m, d] = dStr.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function delta(a, b) { 
+      if (b === 0) return null; 
+      return (a - b) / Math.abs(b) * 100; 
+    }
+    function getCrmSegment(campName) {
+      const name = String(campName || '').toLowerCase();
+      if (name.includes('ativos_pushapp_operacional') || name.includes('_ativos')) return 'ativos';
+      if (name.includes('emqueda_pushapp_operacional') || name.includes('_emqueda') || name.includes('_campanha_emqueda')) return 'emqueda';
+      if (name.includes('basefria_pushapp_operacional') || name.includes('_basefria') || name.includes('_frios') || name.includes('_campanha_frios')) return 'frios';
+      if (name.includes('basegeral_apppush') || name.includes('_basegeral') || name.includes('_geral')) return 'geral';
+      return 'outros';
+    }
+
+    function isCRM(canal) { 
+      return String(canal || '').toUpperCase() === 'CRM'; 
+    }
+    function isAutomated(r) {
+      const txt = String(r.search_text || r.campanha || '').toLowerCase();
+      const m = String(r.midia || '').toLowerCase();
+      return txt.includes('architect') || txt.includes('architecht') || m.includes('architect') || m.includes('firebase') || m.includes('pushnews');
+    }
+    function isRowInApp(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('in-app') || sm.includes('inapp') || sm.includes('in_app') ||
+             cmp.includes('in-app') || cmp.includes('inapp') || cmp.includes('in_app');
+    }
+    function isRowInSite(r) {
+      const sm = String(r.midia || '').toLowerCase();
+      const cmp = String(r.campanha || '').toLowerCase();
+      return sm.includes('insite') || cmp.includes('insite');
+    }
+    function norm(s) { 
+      return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); 
+    }
+    function findKey(row, candidates) { 
+      const keys = Object.keys(row); 
+      for (const c of candidates) { 
+        const nc = norm(c); 
+        const k = keys.find(k => norm(k) === nc); 
+        if (k) return k; 
+      } 
+      return candidates[0]; 
+    }
+    function fmt(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      return Intl.NumberFormat('pt-BR').format(Math.round(v)); 
+    }
+    function fmtR(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v)); 
+    }
+    function fmtC(v) { 
+      if (v === undefined || v === null || isNaN(v)) return '—';
+      if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; 
+      if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; 
+      return fmtR(v); 
+    }
+    function parseNum(s) { 
+      if (!s && s !== 0) return 0; 
+      s = String(s).trim().replace(/\s/g, ''); 
+      if (s.includes('.') && s.includes(',')) { 
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); 
+        else s = s.replace(/,/g, ''); 
+      } else if (s.includes(',') && !s.includes('.')) { 
+        s = s.replace(',', '.'); 
+      } 
+      return parseFloat(s) || 0; 
+    }
+    function parseDate(d) { 
+      if (!d) return null; 
+      const s = String(d).trim(); 
+      if (s.includes('/')) { 
+        const p = s.split('/'); 
+        if (p.length === 3) { 
+          if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; 
+          return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`; 
+        } 
+      } 
+      if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; 
+      return s; 
+    }
+
+    function getSubChannelConsolidated(midia) {
+      const m = String(midia || '').toLowerCase();
+      if (m.includes('insite') || m.includes('in-app') || m.includes('inapp') || m.includes('in_app')) return 'In Site/In App';
+      if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+      if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
+      if (m.includes('whatsapp') || m.includes('wpp') || m.includes('whats')) return 'WhatsApp';
+      if (m.includes('email') || m.includes('e-mail') || m.includes('architect_email')) return 'E-mail';
+      if (m.includes('sms') || m.includes('mobile_messaging')) return 'SMS';
+      return 'Outros';
+    }
+
+    const subchannelColors = {
+      'App Push': '#a078f0',
+      'Web Push': '#4b8ef5',
+      'WhatsApp': '#1fd196',
+      'E-mail': '#e85b85',
+      'SMS': '#f2a63d',
+      'In Site/In App': '#fcd34d',
+      'Outros': '#8a8e96'
+    };
+
+    function getCrmSubChannel(midia) {
+      const m = String(midia || '').toLowerCase();
+      if (m.includes('web_push') || m.includes('webpush') || m.includes('pushnews') || m.includes('pushnotification')) return 'Web Push';
+      if (m.includes('apppush') || m.includes('app_push') || m.includes('notification')) return 'App Push';
+      if (m.includes('whatsapp') || m.includes('wpp')) return 'WhatsApp';
+      return 'E-mail & Outros';
+    }
+
+    function dc(id) {
+      if (charts[id]) {
+        charts[id].destroy();
+        delete charts[id];
+      }
+    }
+
+    function leg(id, items) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = items.map(it => `
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:10px; height:10px; background:${it.color}; border-radius:2px;"></span>
+          <span style="font-size:10px; color:var(--text2);">${it.label}</span>
+        </div>
+      `).join('');
+    }
+
+    function getPeriodB_Dates(ini, fim, cmp) {
+      const aStart = new Date(ini);
+      const aEnd = new Date(fim);
+      const diff = aEnd - aStart;
+      let bStart, bEnd;
+
+      if (cmp === 'wow') {
+        bStart = new Date(aStart); bStart.setDate(bStart.getDate() - 7);
+        bEnd = new Date(aEnd); bEnd.setDate(bEnd.getDate() - 7);
+      } else if (cmp === 'mom') {
+        bStart = new Date(aStart); bStart.setMonth(bStart.getMonth() - 1);
+        bEnd = new Date(aEnd); bEnd.setMonth(bEnd.getMonth() - 1);
+      } else if (cmp === 'yoy') {
+        bStart = new Date(aStart); bStart.setFullYear(bStart.getFullYear() - 1);
+        bEnd = new Date(aEnd); bEnd.setFullYear(bEnd.getFullYear() - 1);
+      }
+      return {
+        bIni: bStart.toISOString().slice(0, 10),
+        bFim: bEnd.toISOString().slice(0, 10)
+      };
+    }
+
+    function getFilteredBase(startD, endD, pdv) {
+      return rawData.filter(r => {
+        if (!r.date || r.date < startD || r.date > endD) return false;
+        if (pdv && r.pdv !== pdv) return false;
+        return true;
+      });
+    }
+
+    function setKpi(kId, val, formatFn, metricKey, baseB) {
+      const kEl = document.getElementById(kId);
+      if (!kEl) return;
+      kEl.textContent = formatFn(val);
+
+      const cmp = document.getElementById('f-cmp').value;
+      const card = kEl.closest('.kpi');
+      if (!card) return;
+
+      let badge = card.querySelector('.kpi-delta');
+      if (badge) badge.remove();
+
+      if (cmp === 'none' || !baseB || baseB.length === 0) return;
+
+      let valB = 0;
+      const crmB = baseB.filter(r => isCRM(r.canal));
+      
+      if (metricKey === 'rec') valB = crmB.reduce((acc, r) => acc + r.receita, 0);
+      else if (metricKey === 'sess') valB = crmB.reduce((acc, r) => acc + r.sessoes, 0);
+      else if (metricKey === 'trans') valB = crmB.reduce((acc, r) => acc + r.trans, 0);
+      else if (metricKey === 'conv') {
+        const s = crmB.reduce((acc, r) => acc + r.sessoes, 0);
+        const t = crmB.reduce((acc, r) => acc + r.trans, 0);
+        valB = s > 0 ? (t / s * 100) : 0;
+      } else if (metricKey === 'tkt') {
+        const t = crmB.reduce((acc, r) => acc + r.trans, 0);
+        const r = crmB.reduce((acc, r) => acc + r.receita, 0);
+        valB = t > 0 ? (r / t) : 0;
+      }
+
+      let diffPct = 0;
+      diffPct = valB > 0 ? ((val - valB) / valB * 100) : 0;
+
+      const isPos = diffPct >= 0;
+      const classColor = isPos ? 'pos' : 'neg';
+      const text = (isPos ? '+' : '') + diffPct.toFixed(1) + '%';
+
+      badge = document.createElement('span');
+      badge.className = `kpi-delta ${classColor}`;
+      badge.textContent = text;
+      card.appendChild(badge);
+    }
+
+    function updateAll() {
+      const ini = document.getElementById('f-inicio').value;
+      const fim = document.getElementById('f-fim').value;
+      const pdv = document.getElementById('f-pdv').value;
+      const disparo = document.getElementById('f-disparo').value;
+      const inappMode = document.getElementById('f-inapp').value;
+      const insiteMode = document.getElementById('f-insite').value;
+      const segmentFilter = document.getElementById('f-segmento').value;
+      const cmp = document.getElementById('f-cmp').value;
+      const subcanal = document.getElementById('f-subcanal').value;
+      const granularity = document.getElementById('f-granularity').value;
+      const campanhaBusca = document.getElementById('f-campanha').value.trim().toLowerCase();
+
+      // Filtrar base geral e base CRM no período A
+      const baseA = getFilteredBase(ini, fim, pdv);
+      const totalRec = baseA.reduce((acc, r) => acc + r.receita, 0);
+      const totalSess = baseA.reduce((acc, r) => acc + r.sessoes, 0);
+      const totalTrans = baseA.reduce((acc, r) => acc + r.trans, 0);
+
+      let crmFiltered = baseA.filter(r => isCRM(r.canal));
+      if (inappMode === 'without') crmFiltered = crmFiltered.filter(r => !isRowInApp(r));
+      if (insiteMode === 'without') crmFiltered = crmFiltered.filter(r => !isRowInSite(r));
+      if (segmentFilter !== 'all') {
+        crmFiltered = crmFiltered.filter(r => getCrmSegment(r.campanha) === segmentFilter);
+      }
+      if (disparo === 'auto') crmFiltered = crmFiltered.filter(r => isAutomated(r));
+      else if (disparo === 'manual') crmFiltered = crmFiltered.filter(r => !isAutomated(r));
+      if (campanhaBusca) crmFiltered = crmFiltered.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
+      if (subcanal !== 'all') crmFiltered = crmFiltered.filter(r => getCrmSubChannel(r.midia) === subcanal);
+
+      let data = crmFiltered;
+      if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+        const selSet = new Set(window.selectedOrigens);
+        data = crmFiltered.filter(r => selSet.has(r.midia));
+      }
+
+      // Filtrar base da Insider
+      let insiderFiltered = rawInsider.filter(r => {
+        if (!r.date || r.date < ini || r.date > fim) return false;
+        if (segmentFilter !== 'all' && getCrmSegment(r.campanha) !== segmentFilter) return false;
+        return true;
+      });
+
+      const enviosTotal = insiderFiltered.reduce((acc, r) => acc + r.envios, 0);
+      const entregasTotal = insiderFiltered.reduce((acc, r) => acc + r.entregas, 0);
+      const cliquesTotal = insiderFiltered.reduce((acc, r) => acc + r.cliques, 0);
+      const crmCtr = entregasTotal > 0 ? (cliquesTotal / entregasTotal * 100) : 0;
+
+      // KPIs
+      const crmRec = data.reduce((acc, r) => acc + r.receita, 0);
+      const crmSess = data.reduce((acc, r) => acc + r.sessoes, 0);
+      const crmTrans = data.reduce((acc, r) => acc + r.trans, 0);
+      const crmConv = crmSess > 0 ? (crmTrans / crmSess * 100) : 0;
+      const crmTicket = crmTrans > 0 ? (crmRec / crmTrans) : 0;
+
+      const crmRecShare = totalRec > 0 ? (crmRec / totalRec * 100) : 0;
+      const crmSessShare = totalSess > 0 ? (crmSess / totalSess * 100) : 0;
+      const crmTransShare = totalTrans > 0 ? (crmTrans / totalTrans * 100) : 0;
+
+      // Buscar baseB se houver comparativo
+      let baseB = null;
+      if (cmp !== 'none') {
+        const bDates = getPeriodB_Dates(ini, fim, cmp);
+        baseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv);
+      }
+
+      setKpi('k-crm-receita', crmRec, fmtR, 'rec', baseB);
+      document.getElementById('s-crm-receita').innerHTML = `${crmRecShare.toFixed(2)}% do faturamento total`;
+      setKpi('k-crm-sessoes', crmSess, fmt, 'sess', baseB);
+      document.getElementById('s-crm-sessoes').innerHTML = `${crmSessShare.toFixed(2)}% de sessões totais`;
+      setKpi('k-crm-transacoes', crmTrans, fmt, 'trans', baseB);
+      document.getElementById('s-crm-transacoes').innerHTML = `${crmTransShare.toFixed(2)}% das transações totais`;
+      setKpi('k-crm-conversao', crmConv, v => v > 0 ? v.toFixed(2) + '%' : '—', 'conv', baseB);
+      document.getElementById('s-crm-conversao').textContent = 'Eficiência de conversão';
+      setKpi('k-crm-ticket', crmTicket, v => v > 0 ? fmtR(v) : '—', 'tkt', baseB);
+      document.getElementById('s-crm-ticket').textContent = 'Valor médio por pedido';
+      
+      setKpi('k-crm-envios', enviosTotal, fmt, 'envios', baseB);
+      document.getElementById('s-crm-envios').textContent = 'Total de Pushs Enviados';
+      setKpi('k-crm-ctr', crmCtr, v => v > 0 ? v.toFixed(2) + '%' : '—', 'ctr', baseB);
+      document.getElementById('s-crm-ctr').textContent = 'Taxa de Clique Média (Insider)';
+
+      // -------------------------------------------------------------
+      // --- LOGICA DE RENDERIZAÇÃO DOS GRÁFICOS ---
+      // -------------------------------------------------------------
+      const customMinEvol = document.getElementById('evolRevMin').value !== "" ? Number(document.getElementById('evolRevMin').value) : undefined;
+      const customMaxEvol = document.getElementById('evolRevMax').value !== "" ? Number(document.getElementById('evolRevMax').value) : undefined;
+
+      const keyFn = (dStr) => {
+        if (!dStr || dStr.length < 10) return '';
+        return granularity === 'monthly' ? dStr.slice(0, 7) : dStr;
+      };
+
+      // Faturamento total por dia/mês para o Share
+      const totalGroupMap = {};
+      rawData.forEach(r => {
+        if (!r.date) return;
+        if (pdv && r.pdv !== pdv) return;
+        const key = keyFn(r.date);
+        if (key) {
+          totalGroupMap[key] = (totalGroupMap[key] || 0) + r.receita;
+        }
+      });
+
+      // Agrupamento CRM
+      const groupMap = {};
+      data.forEach(r => {
+        if (!r.date) return;
+        const key = keyFn(r.date);
+        if (!key) return;
+        
+        if (!groupMap[key]) {
+          groupMap[key] = {
+            crmTotal: 0,
+            sessTotal: 0,
+            transTotal: 0,
+            subMap: {
+              'App Push': 0,
+              'Web Push': 0,
+              'WhatsApp': 0,
+              'E-mail': 0,
+              'SMS': 0,
+              'In Site/In App': 0,
+              'Outros': 0
+            },
+            mMap: {}
+          };
+        }
+        
+        groupMap[key].crmTotal += r.receita;
+        groupMap[key].sessTotal += r.sessoes;
+        groupMap[key].transTotal += r.trans;
+        
+        const sub = getSubChannelConsolidated(r.midia);
+        groupMap[key].subMap[sub] = (groupMap[key].subMap[sub] || 0) + r.receita;
+        
+        const m = r.midia || 'Outros';
+        groupMap[key].mMap[m] = (groupMap[key].mMap[m] || 0) + r.receita;
+      });
+
+      const sortedKeys = Object.keys(groupMap).sort();
+      
+      const mLabels = sortedKeys.map(k => {
+        if (granularity === 'monthly') {
+          const [y, mm] = k.split('-');
+          const monthNames = {
+            '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr', '05': 'Mai', '06': 'Jun',
+            '07': 'Jul', '08': 'Ago', '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
+          };
+          return `${monthNames[mm]}/${y.slice(2)}`;
+        } else {
+          return k.slice(8, 10) + '/' + k.slice(5, 7);
+        }
+      });
+
+      const mCrmTotal = sortedKeys.map(k => Math.round(groupMap[k].crmTotal));
+      const mSessTotal = sortedKeys.map(k => Math.round(groupMap[k].sessTotal));
+      const mTransTotal = sortedKeys.map(k => Math.round(groupMap[k].transTotal));
+      const mConvTotal = sortedKeys.map(k => groupMap[k].sessTotal > 0 ? (groupMap[k].transTotal / groupMap[k].sessTotal * 100) : 0);
+      
+      const mShare = sortedKeys.map(k => {
+        const totalFaturamento = totalGroupMap[k] || 0;
+        const crmFaturamento = groupMap[k].crmTotal || 0;
+        return totalFaturamento > 0 ? Number((crmFaturamento / totalFaturamento * 100).toFixed(2)) : 0;
+      });
+      const mTicket = sortedKeys.map(k => groupMap[k].transTotal > 0 ? Number((groupMap[k].crmTotal / groupMap[k].transTotal).toFixed(2)) : 0);
+
+      // Calcular MoM
+      if (sortedKeys.length >= 2) {
+        const lastIdx = sortedKeys.length - 1;
+        const prevIdx = lastIdx - 1;
+        const lastPeriodLabel = mLabels[lastIdx];
+        const unit = granularity === 'monthly' ? 'Mês' : 'Dia';
+        
+        const lastRec = mCrmTotal[lastIdx];
+        const prevRec = mCrmTotal[prevIdx];
+        const recMom = prevRec > 0 ? ((lastRec - prevRec) / prevRec * 100) : null;
+        
+        const lastShare = mShare[lastIdx];
+        const prevShare = mShare[prevIdx];
+        const shareDiff = lastShare - prevShare;
+        
+        const recMomStr = recMom !== null ? `${recMom > 0 ? '+' : ''}${recMom.toFixed(1)}%` : '—';
+        const shareMomStr = `${shareDiff > 0 ? '+' : ''}${shareDiff.toFixed(2)}% p.p.`;
+        
+        const recCls = recMom > 0 ? 'pos' : recMom < 0 ? 'neg' : 'neu';
+        const shareCls = shareDiff > 0 ? 'pos' : shareDiff < 0 ? 'neg' : 'neu';
+        
+        document.getElementById('sub-crm-evolucao-mom').innerHTML = `
+          Último ${unit} (${lastPeriodLabel}): 
+          Receita: <span class="kpi-delta ${recCls}" style="margin-left:2px; float:none; display:inline;">${recMomStr}</span> | 
+          Share: <span class="kpi-delta ${shareCls}" style="margin-left:2px; float:none; display:inline;">${shareMomStr}</span>
+        `;
+        
+        const lastConv = mConvTotal[lastIdx];
+        const prevConv = mConvTotal[prevIdx];
+        const convDiff = lastConv - prevConv;
+        const convCls = convDiff > 0 ? 'pos' : convDiff < 0 ? 'neg' : 'neu';
+        const convMomStr = `${convDiff > 0 ? '+' : ''}${convDiff.toFixed(2)}% p.p.`;
+        
+        document.getElementById('sub-crm-eficiencia-mom').innerHTML = `
+          Último ${unit} (${lastPeriodLabel}): 
+          Conversão: <span class="kpi-delta ${convCls}" style="margin-left:2px; float:none; display:inline;">${convMomStr}</span>
+        `;
+      } else {
+        document.getElementById('sub-crm-evolucao-mom').textContent = 'Histórico insuficiente para cálculo de evolução';
+        document.getElementById('sub-crm-eficiencia-mom').textContent = 'Métricas de eficiência';
+      }
+
+      // --- GRÁFICO 0.1: FUNIL DE DISPAROS APP PUSH (INSIDER) ---
+      dc('chart-crm-funil-insider');
+      leg('leg-crm-funil-insider', [{ color: '#a078f0', label: 'Estatísticas de Disparo' }]);
+      
+      const enviosTotal = rawInsider.reduce((acc, r) => acc + (r.envios || 0), 0);
+      const entregasTotal = rawInsider.reduce((acc, r) => acc + (r.entregas || 0), 0);
+      const cliquesTotal = rawInsider.reduce((acc, r) => acc + (r.cliques || 0), 0);
+      
+      const insiderFunnelLabels = ['Enviados (Insider)', 'Entregues (Insider)', 'Cliques (Insider)'];
+      const insiderFunnelValues = [enviosTotal, entregasTotal, cliquesTotal];
+      
+      charts['chart-crm-funil-insider'] = new Chart(document.getElementById('chart-crm-funil-insider'), {
+        type: 'bar',
+        data: {
+          labels: insiderFunnelLabels,
+          datasets: [{
+            label: 'Volume',
+            data: insiderFunnelValues,
+            backgroundColor: [
+              'rgba(160, 120, 240, 0.85)',
+              'rgba(75, 142, 245, 0.85)',
+              'rgba(31, 209, 150, 0.85)'
+            ],
+            borderRadius: 4,
+            barThickness: 28,
+            datalabels: {
+              display: true,
+              align: 'right',
+              anchor: 'end',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1.5,
+              borderRadius: 4,
+              padding: { top: 4, bottom: 4, left: 8, right: 8 },
+              font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: (v, ctx) => {
+                if (v === 0) return '—';
+                if (ctx.dataIndex === 0) return fmt(v);
+                
+                // Conversão do passo anterior
+                const prev = insiderFunnelValues[ctx.dataIndex - 1];
+                const prevPct = prev > 0 ? ((v / prev) * 100).toFixed(1) + '%' : '0%';
+                
+                // CTR se for o último passo
+                if (ctx.dataIndex === 2) {
+                  return `${fmt(v)} (CTR: ${prevPct})`;
+                }
+                return `${fmt(v)} (${prevPct} do ant.)`;
+              }
+            }
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { 
+              grace: '25%',
+              grid: { display: false }, 
+              ticks: { display: false } 
+            },
+            y: { 
+              grid: { display: false }, 
+              ticks: { color: '#f8fafc', font: { size: 11.5, weight: 'bold', family: TF.family } } 
+            }
+          }
+        }
+      });
+
+      // --- GRÁFICO 0.15: FUNIL DE NAVEGAÇÃO CRM (GA4) ---
+      dc('chart-crm-funil-ga');
+      leg('leg-crm-funil-ga', [{ color: '#f2a63d', label: 'Estatísticas de Navegação' }]);
+      
+      const carrinhosTotal = data.reduce((acc, r) => acc + (r.carrinhos || 0), 0);
+      const checkoutsTotal = data.reduce((acc, r) => acc + (r.checkouts || 0), 0);
+      
+      const gaFunnelLabels = ['Sessões (GA)', 'Carrinho (GA)', 'Checkout (GA)', 'Compra (GA)'];
+      const gaFunnelValues = [crmSess, carrinhosTotal, checkoutsTotal, crmTrans];
+      
+      charts['chart-crm-funil-ga'] = new Chart(document.getElementById('chart-crm-funil-ga'), {
+        type: 'bar',
+        data: {
+          labels: gaFunnelLabels,
+          datasets: [{
+            label: 'Volume',
+            data: gaFunnelValues,
+            backgroundColor: [
+              'rgba(240, 160, 48, 0.85)',
+              'rgba(232, 91, 133, 0.85)',
+              'rgba(252, 211, 77, 0.85)',
+              'rgba(138, 142, 150, 0.85)'
+            ],
+            borderRadius: 4,
+            barThickness: 26,
+            datalabels: {
+              display: true,
+              align: 'right',
+              anchor: 'end',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1.5,
+              borderRadius: 4,
+              padding: { top: 4, bottom: 4, left: 8, right: 8 },
+              font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: (v, ctx) => {
+                if (v === 0) return '—';
+                if (ctx.dataIndex === 0) return fmt(v);
+                
+                // Conversão do passo anterior
+                const prev = gaFunnelValues[ctx.dataIndex - 1];
+                const prevPct = prev > 0 ? ((v / prev) * 100).toFixed(1) + '%' : '0%';
+                
+                // Conversão global do funil GA
+                const globalPct = gaFunnelValues[0] > 0 ? ((v / gaFunnelValues[0]) * 100).toFixed(2) + '%' : '0%';
+                
+                return `${fmt(v)} (${prevPct} do ant. | ${globalPct} global)`;
+              }
+            }
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { 
+              grace: '25%',
+              grid: { display: false }, 
+              ticks: { display: false } 
+            },
+            y: { 
+              grid: { display: false }, 
+              ticks: { color: '#f8fafc', font: { size: 11.5, weight: 'bold', family: TF.family } } 
+            }
+          }
+        }
+      });
+
+      // --- GRÁFICO 0.2: CTR DIÁRIO CRM ---
+      dc('crm-ctr-daily');
+      
+      const insiderGroupMap = {};
+      insiderFiltered.forEach(r => {
+        if (!r.date) return;
+        const key = keyFn(r.date);
+        if (key) {
+          if (!insiderGroupMap[key]) {
+            insiderGroupMap[key] = { envios: 0, entregas: 0, cliques: 0 };
+          }
+          insiderGroupMap[key].envios += r.envios;
+          insiderGroupMap[key].entregas += r.entregas;
+          insiderGroupMap[key].cliques += r.cliques;
+        }
+      });
+
+      const mCtrDaily = sortedKeys.map(k => {
+        const group = insiderGroupMap[k];
+        if (!group || group.entregas === 0) return 0;
+        return Number((group.cliques / group.entregas * 100).toFixed(2));
+      });
+
+      leg('leg-crm-ctr-daily', [
+        { color: '#1fd196', label: 'CTR Diário %' }
+      ]);
+
+      charts['crm-ctr-daily'] = new Chart(document.getElementById('chart-crm-ctr-daily'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'CTR %',
+            data: mCtrDaily,
+            borderColor: '#1fd196',
+            backgroundColor: 'rgba(31, 209, 150, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4.5,
+            borderWidth: 2.8,
+            datalabels: {
+              display: true,
+              align: 'top',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 4, bottom: 4, left: 8, right: 8 },
+              font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+            }
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 11, family: TF.family } }, grid: { display: false } },
+            y: { min: 0, ticks: { callback: v => v.toFixed(1) + '%', color: '#cbd5e1', font: { size: 11, family: TF.family } }, grid: { color: GRID } }
+          }
+        }
+      });
+
+      // --- GRÁFICO 1: EVOLUÇÃO E DETALHAMENTO ---
+      dc('crm-evolucao');
+      dc('crm-detalhado');
+
+      if (cmp !== 'none') {
+        // Modo comparativo: exibe apenas evolução de faturamento em linhas (atual vs comparativo)
+        const bDates = getPeriodB_Dates(ini, fim, cmp);
+        const getEvolData = (dList, startD, endD) => {
+          const map = {};
+          dList.forEach(r => {
+            if (!r.date) return;
+            const key = keyFn(r.date);
+            if (key) map[key] = (map[key] || 0) + r.receita;
+          });
+          
+          const keysList = [];
+          if (granularity === 'monthly') {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              const monthKey = curr.toISOString().slice(0, 7);
+              if (!keysList.includes(monthKey)) keysList.push(monthKey);
+              curr.setMonth(curr.getMonth() + 1);
+            }
+          } else {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              keysList.push(curr.toISOString().slice(0, 10));
+              curr.setUTCDate(curr.getUTCDate() + 1);
+            }
+          }
+          
+          return {
+            labels: keysList.map(k => {
+              if (granularity === 'monthly') {
+                const [y, mm] = k.split('-');
+                const monthNames = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+                return `${monthNames[mm]}/${y.slice(2)}`;
+              } else {
+                return k.slice(8, 10) + '/' + k.slice(5, 7);
+              }
+            }),
+            data: keysList.map(k => Math.round(map[k] || 0))
+          };
+        };
+
+        const resA = getEvolData(data, ini, fim);
+        
+        let crmBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv).filter(r => isCRM(r.canal));
+        if (inappMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInApp(r));
+        if (insiteMode === 'without') crmBaseB = crmBaseB.filter(r => !isRowInSite(r));
+        if (segmentFilter !== 'all') {
+          crmBaseB = crmBaseB.filter(r => getCrmSegment(r.campanha) === segmentFilter);
+        }
+        if (disparo === 'auto') crmBaseB = crmBaseB.filter(r => isAutomated(r));
+        else if (disparo === 'manual') crmBaseB = crmBaseB.filter(r => !isAutomated(r));
+        if (campanhaBusca) crmBaseB = crmBaseB.filter(r => String(r.campanha || '').toLowerCase().includes(campanhaBusca));
+        if (subcanal !== 'all') crmBaseB = crmBaseB.filter(r => getCrmSubChannel(r.midia) === subcanal);
+        
+        let dataB = crmBaseB;
+        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+          const selSet = new Set(window.selectedOrigens);
+          dataB = crmBaseB.filter(r => selSet.has(r.midia));
+        }
+        
+        const resB = getEvolData(dataB, bDates.bIni, bDates.bFim);
+
+        document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita CRM (Comparativo)`;
+        const labelA = 'Período Atual';
+        const labelB = cmp === 'wow' ? 'Semana Anterior' : cmp === 'mom' ? 'Mês Anterior' : 'Ano Anterior';
+        
+        leg('leg-crm-evolucao', [{ color: '#1fd196', label: labelA }, { color: '#8a8e96', label: labelB }]);
+        
+        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+          type: 'line',
+          data: {
+            labels: resA.labels,
+            datasets: [
+              { label: labelA, data: resA.data, borderColor: '#1fd196', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+              { label: labelB, data: resB.data, borderColor: '#8a8e96', borderDash: [5, 5], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}` } } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
+              y: { min: customMinEvol !== undefined ? customMinEvol : 0, max: customMaxEvol, ticks: { callback: v => fmtC(v), color: TICK, font: TF }, grid: { color: GRID } }
+            }
+          }
+        });
+
+        // Ocultar/Limpar o gráfico detalhado no modo comparativo para evitar confusão
+        document.getElementById('leg-crm-detalhado').innerHTML = '';
+        document.getElementById('sub-crm-detalhado-mom').textContent = 'O modo detalhado está disponível apenas sem comparativo.';
+        charts['crm-detalhado'] = new Chart(document.getElementById('chart-crm-detalhado'), {
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Lógica de Eficiência comparativo
+        const getConvData = (dList, startD, endD) => {
+          const sessMap = {}, transMap = {};
+          dList.forEach(r => {
+            if (!r.date) return;
+            const key = keyFn(r.date);
+            if (key) {
+              sessMap[key] = (sessMap[key] || 0) + r.sessoes;
+              transMap[key] = (transMap[key] || 0) + r.trans;
+            }
+          });
+          const keysList = [];
+          if (granularity === 'monthly') {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              const monthKey = curr.toISOString().slice(0, 7);
+              if (!keysList.includes(monthKey)) keysList.push(monthKey);
+              curr.setMonth(curr.getMonth() + 1);
+            }
+          } else {
+            let curr = new Date(startD);
+            const endLimit = new Date(endD);
+            while (curr <= endLimit) {
+              keysList.push(curr.toISOString().slice(0, 10));
+              curr.setUTCDate(curr.getUTCDate() + 1);
+            }
+          }
+          return keysList.map(k => sessMap[k] > 0 ? (transMap[k] / sessMap[k] * 100) : 0);
+        };
+        const convA = getConvData(data, ini, fim);
+        const convB = getConvData(dataB, bDates.bIni, bDates.bFim);
+        leg('leg-crm-eficiencia-mensal', [{ color: '#1fd196', label: labelA }, { color: '#8a8e96', label: labelB }]);
+        charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
+          type: 'line',
+          data: {
+            labels: resA.labels,
+            datasets: [
+              { label: labelA, data: convA, borderColor: '#1fd196', backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+              { label: labelB, data: convB, borderColor: '#8a8e96', borderDash: [5, 5], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%` } } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } },
+              y: { min: 0, ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
+            }
+          }
+        });
+
+      } else {
+        // --- 1. GRÁFICO DE CONSOLIDADO (SUB-CANAL) ---
+        document.getElementById('title-crm-evolucao').textContent = `Evolução de Receita & Share CRM (Consolidado)`;
+        
+        const subList = ['App Push', 'Web Push', 'E-mail', 'WhatsApp', 'SMS', 'In Site/In App', 'Outros'];
+        const datasetsCons = [
+          {
+            type: 'line',
+            label: 'Share CRM',
+            data: mShare,
+            borderColor: '#f07040',
+            backgroundColor: 'transparent',
+            yAxisID: 'yShare',
+            pointRadius: 4,
+            pointBackgroundColor: '#f07040',
+            borderWidth: 2.5,
+            order: 1,
+            datalabels: {
+              display: true,
+              align: 'top',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 4, bottom: 4, left: 8, right: 8 },
+              font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+            }
+          }
+        ];
+
+        subList.forEach((sub, idx) => {
+          const color = subchannelColors[sub] || '#8a8e96';
+          const sData = sortedKeys.map(k => Math.round(groupMap[k].subMap[sub] || 0));
+          datasetsCons.push({
+            type: 'bar',
+            label: sub,
+            data: sData,
+            backgroundColor: color,
+            yAxisID: 'yRec',
+            stack: 'crm',
+            order: idx + 2,
+            datalabels: { display: false }
+          });
+        });
+
+        const legendItemsCons = subList.map(sub => ({
+          color: subchannelColors[sub] || '#8a8e96',
+          label: sub
+        }));
+        legendItemsCons.unshift({ color: '#f07040', label: 'Share CRM' });
+        leg('leg-crm-evolucao', legendItemsCons);
+
+        charts['crm-evolucao'] = new Chart(document.getElementById('chart-crm-evolucao'), {
+          data: { labels: mLabels, datasets: datasetsCons },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (ctx.dataset.label === 'Share CRM') return `Share CRM: ${ctx.raw}%`;
+                    return `${ctx.dataset.label}: ${fmtR(ctx.raw)}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
+              yRec: {
+                stacked: true,
+                position: 'left',
+                min: customMinEvol !== undefined ? customMinEvol : 0,
+                max: customMaxEvol,
+                ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+                grid: { color: GRID }
+              },
+              yShare: {
+                position: 'right',
+                ticks: { callback: v => v + '%', color: TICK, font: TF },
+                grid: { display: false },
+                min: 0,
+                max: Math.max(...mShare) > 10 ? undefined : 10
+              }
+            }
+          }
+        });
+
+        // --- 2. GRÁFICO DE DETALHAMENTO (ORIGEM & MÍDIA) ---
+        const activeMídias = new Set();
+        data.forEach(r => { if (r.midia) activeMídias.add(r.midia); });
+        const mídiaList = Array.from(activeMídias);
+
+        const datasetsDet = [];
+        mídiaList.forEach((m, idx) => {
+          const color = `hsl(${(idx * 360 / Math.max(mídiaList.length, 1)) % 360}, 65%, 55%)`;
+          const sData = sortedKeys.map(k => Math.round(groupMap[k].mMap[m] || 0));
+          datasetsDet.push({
+            type: 'bar',
+            label: m,
+            data: sData,
+            backgroundColor: color,
+            stack: 'crm_det',
+            datalabels: { display: false }
+          });
+        });
+
+        const legendItemsDet = mídiaList.map((m, idx) => ({
+          color: `hsl(${(idx * 360 / Math.max(mídiaList.length, 1)) % 360}, 65%, 55%)`,
+          label: m
+        }));
+        leg('leg-crm-detalhado', legendItemsDet);
+        document.getElementById('sub-crm-detalhado-mom').textContent = 'Quebra de faturamento por origem e mídia de CRM';
+
+        charts['crm-detalhado'] = new Chart(document.getElementById('chart-crm-detalhado'), {
+          data: { labels: mLabels, datasets: datasetsDet },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}`
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
+              y: {
+                stacked: true,
+                min: 0,
+                ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+                grid: { color: GRID }
+              }
+            }
+          }
+        });
+              // --- GRÁFICO 2: EFICIÊNCIA ---
+        dc('crm-eficiencia-mensal');
+        leg('leg-crm-eficiencia-mensal', [
+          { color: 'rgba(31, 209, 150, 0.4)', label: 'Receita CRM' },
+          { color: '#f0a030', label: 'Sessões' },
+          { color: '#1fd196', label: 'Conversão CRM' }
+        ]);
+        
+        charts['crm-eficiencia-mensal'] = new Chart(document.getElementById('chart-crm-eficiencia-mensal'), {
+          data: {
+            labels: mLabels,
+            datasets: [
+              {
+                type: 'line',
+                label: 'Conversão CRM',
+                data: mConvTotal,
+                borderColor: '#1fd196',
+                borderDash: [4, 4],
+                backgroundColor: 'transparent',
+                yAxisID: 'yConv',
+                pointRadius: 3,
+                pointBackgroundColor: '#1fd196',
+                borderWidth: 2,
+                order: 1,
+                datalabels: {
+                  display: true,
+                  align: 'top',
+                  color: '#fff',
+                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  borderWidth: 1,
+                  borderRadius: 4,
+                  padding: { top: 3, bottom: 3, left: 6, right: 6 },
+                  font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+                  formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+                }
+              },
+              {
+                type: 'line',
+                label: 'Sessões',
+                data: mSessTotal,
+                borderColor: '#f0a030',
+                backgroundColor: 'transparent',
+                yAxisID: 'ySess',
+                pointRadius: 4,
+                pointBackgroundColor: '#f0a030',
+                borderWidth: 2,
+                order: 2,
+                datalabels: { display: false }
+              },
+              {
+                type: 'bar',
+                label: 'Receita CRM',
+                data: mCrmTotal,
+                backgroundColor: 'rgba(31, 209, 150, 0.4)',
+                yAxisID: 'yRec',
+                order: 3,
+                datalabels: { display: false }
+              }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (ctx.dataset.label === 'Conversão CRM') return `Conversão CRM: ${ctx.raw.toFixed(2)}%`;
+                    if (ctx.dataset.label === 'Sessões') return `Sessões: ${fmt(ctx.raw)}`;
+                    return `Receita CRM: ${fmtR(ctx.raw)}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+              yRec: {
+                position: 'left',
+                min: 0,
+                ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+                grid: { color: GRID }
+              },
+              ySess: {
+                position: 'right',
+                min: 0,
+                ticks: { callback: v => fmt(v), color: TICK, font: TF },
+                grid: { display: false }
+              },
+              yConv: { display: false, min: 0 }
+            }
+          }
+        });
+      }
+
+      // --- GRÁFICO 3: EVOLUÇÃO DE SESSÕES ---
+      dc('crm-sessoes');
+      leg('leg-crm-sessoes', [{ color: '#f0a030', label: 'Sessões' }]);
+      charts['crm-sessoes'] = new Chart(document.getElementById('chart-crm-sessoes'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'Sessões',
+            data: mSessTotal,
+            borderColor: '#f0a030',
+            backgroundColor: 'rgba(240, 160, 48, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2,
+            datalabels: { display: false }
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Sessões: ${fmt(ctx.raw)}` } } },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: { min: 0, ticks: { color: TICK, font: TF }, grid: { color: GRID } }
+          }
+        }
+      });
+
+      // --- GRÁFICO 4: EVOLUÇÃO DE TRANSAÇÕES ---
+      dc('crm-transacoes');
+      leg('leg-crm-transacoes', [{ color: '#1fd196', label: 'Transações' }]);
+      charts['crm-transacoes'] = new Chart(document.getElementById('chart-crm-transacoes'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'Transações',
+            data: mTransTotal,
+            borderColor: '#1fd196',
+            backgroundColor: 'rgba(31, 209, 150, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2,
+            datalabels: { display: false }
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Transações: ${fmt(ctx.raw)}` } } },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: { min: 0, ticks: { color: TICK, font: TF }, grid: { color: GRID } }
+          }
+        }
+      });
+
+      // --- GRÁFICO 5: EVOLUÇÃO DE CONVERSÃO % ---
+      dc('crm-conversao');
+      leg('leg-crm-conversao', [{ color: '#e85b85', label: 'Conversão (%)' }]);
+      charts['crm-conversao'] = new Chart(document.getElementById('chart-crm-conversao'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'Conversão',
+            data: mConvTotal,
+            borderColor: '#e85b85',
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2.5,
+            datalabels: {
+              display: true,
+              align: 'top',
+              color: '#e85b85',
+              font: { size: 9, family: "'DM Mono',monospace" },
+              formatter: v => v > 0 ? v.toFixed(2) + '%' : ''
+            }
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Conversão: ${ctx.raw.toFixed(2)}%` } } },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: { min: 0, ticks: { callback: v => v.toFixed(1) + '%', color: TICK, font: TF }, grid: { color: GRID } }
+          }
+        }
+      });
+
+      // --- GRÁFICO 6: PARTICIPAÇÃO DO CANAL (SITE vs APP) AO LONGO DO TEMPO ---
+      const mSiteRec = [];
+      const mAppRec = [];
+      const mAppShare = [];
+
+      sortedKeys.forEach(k => {
+        let sRec = 0, aRec = 0;
+        data.forEach(r => {
+          if (keyFn(r.date) === k) {
+            if (r.pdv === 'Site') sRec += r.receita;
+            else if (r.pdv === 'App') aRec += r.receita;
+          }
+        });
+        mSiteRec.push(Math.round(sRec));
+        mAppRec.push(Math.round(aRec));
+        const totalCanal = sRec + aRec;
+        mAppShare.push(totalCanal > 0 ? Number((aRec / totalCanal * 100).toFixed(2)) : 0);
+      });
+
+      dc('crm-canal-share');
+      leg('leg-crm-canal-share', [
+        { color: '#4b8ef5', label: 'Site (Receita)' },
+        { color: '#1fd196', label: 'App (Receita)' }
+      ]);
+
+      charts['crm-canal-share'] = new Chart(document.getElementById('chart-crm-canal-share'), {
+        data: {
+          labels: mLabels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Site',
+              data: mSiteRec,
+              backgroundColor: '#4b8ef5',
+              stack: 'canal',
+              datalabels: {
+                display: true,
+                align: 'center',
+                anchor: 'center',
+                color: '#fff',
+                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                borderWidth: 1,
+                borderRadius: 4,
+                padding: { top: 3, bottom: 3, left: 5, right: 5 },
+                font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+                formatter: (v, ctx) => {
+                  if (!v || v === 0) return '';
+                  const idx = ctx.dataIndex;
+                  const total = mSiteRec[idx] + mAppRec[idx];
+                  if (total === 0) return '';
+                  return ((v / total) * 100).toFixed(0) + '%';
+                }
+              }
+            },
+            {
+              type: 'bar',
+              label: 'App',
+              data: mAppRec,
+              backgroundColor: '#1fd196',
+              stack: 'canal',
+              datalabels: {
+                display: true,
+                align: 'center',
+                anchor: 'center',
+                color: '#fff',
+                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                borderWidth: 1,
+                borderRadius: 4,
+                padding: { top: 3, bottom: 3, left: 5, right: 5 },
+                font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+                formatter: (v, ctx) => {
+                  if (!v || v === 0) return '';
+                  const idx = ctx.dataIndex;
+                  const total = mSiteRec[idx] + mAppRec[idx];
+                  if (total === 0) return '';
+                  return ((v / total) * 100).toFixed(0) + '%';
+                }
+              }
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${fmtR(ctx.raw)}`
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: {
+              stacked: true,
+              min: 0,
+              title: { display: true, text: 'Receita (R$)', color: TICK, font: TF },
+              ticks: { callback: v => fmtC(v), color: TICK, font: TF },
+              grid: { color: GRID }
+            }
+          }
+        }
+      });
+
+      // --- GRÁFICO 7: EVOLUÇÃO DO TICKET MÉDIO CRM ---
+      dc('crm-ticket-evol');
+      leg('leg-crm-ticket-evol', [{ color: '#f2a63d', label: 'Ticket Médio' }]);
+      charts['crm-ticket-evol'] = new Chart(document.getElementById('chart-crm-ticket-evol'), {
+        type: 'line',
+        data: {
+          labels: mLabels,
+          datasets: [{
+            label: 'Ticket Médio',
+            data: mTicket,
+            borderColor: '#f2a63d',
+            backgroundColor: 'rgba(242, 166, 61, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2,
+            datalabels: {
+              display: true,
+              align: 'top',
+              color: '#fff',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: { top: 4, bottom: 4, left: 8, right: 8 },
+              font: { size: 12, weight: 'bold', family: "'DM Mono',monospace" },
+              formatter: v => v > 0 ? fmtR(v) : ''
+            }
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Ticket Médio: ${fmtR(ctx.raw)}` } } },
+          scales: {
+            x: { ticks: { color: TICK, font: TF }, grid: { display: false } },
+            y: { min: 0, grace: '35%', ticks: { callback: v => fmtR(v), color: TICK, font: TF }, grid: { color: GRID } }
+          }
+        }
+      });
+
+      // Gemini insights
       const key = localStorage.getItem('guanabara_gemini_key');
       if (key) {
         const dataIniFmt = ini ? ini.split('-').reverse().join('/') : '—';
@@ -1251,17 +2526,6 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
           }
           updateAll();
     }
-
-    function isCRM(canal) { return String(canal).toUpperCase() === 'CRM'; }
-    function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
-    function findKey(row, candidates) { const keys = Object.keys(row); for (const c of candidates) { const nc = norm(c); const k = keys.find(k => norm(k) === nc); if (k) return k; } return candidates[0]; }
-    function fmt(v) { return Intl.NumberFormat('pt-BR').format(Math.round(v)); }
-    function fmtR(v) { return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v)); }
-    function fmtC(v) { if (v >= 1e6) return 'R$ ' + Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v / 1e6) + ' mi'; if (v >= 1e3) return 'R$ ' + Intl.NumberFormat('pt-BR').format(Math.round(v / 1e3)) + ' mil'; return fmtR(v); }
-    function parseNum(s) { if (!s && s !== 0) return 0; s = String(s).trim().replace(/\s/g, ''); if (s.includes('.') && s.includes(',')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (s.includes(',') && !s.includes('.')) { s = s.replace(',', '.'); } return parseFloat(s) || 0; }
-    function parseDate(d) { if (!d) return null; const s = String(d).trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) { if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`; return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` } } if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; return s; }
-    function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
-    function leg(id, items) { const el = document.getElementById(id); if (!el) return; el.innerHTML = items.map(i => `<span><span class="legend-dot" style="background:${i.color}"></span>${i.label}</span>`).join(''); }
 
     function resetFilters(isFirstLoad = false) {
       if (isFirstLoad) {
