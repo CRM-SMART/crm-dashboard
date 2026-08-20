@@ -1389,10 +1389,6 @@
       dc('chart-crm-funil-insider');
       leg('leg-crm-funil-insider', [{ color: '#a078f0', label: 'Estatísticas de Disparo' }]);
       
-      const enviosTotal = rawInsider.reduce((acc, r) => acc + (r.envios || 0), 0);
-      const entregasTotal = rawInsider.reduce((acc, r) => acc + (r.entregas || 0), 0);
-      const cliquesTotal = rawInsider.reduce((acc, r) => acc + (r.cliques || 0), 0);
-      
       const insiderFunnelLabels = ['Enviados (Insider)', 'Entregues (Insider)', 'Cliques (Insider)'];
       const insiderFunnelValues = [enviosTotal, entregasTotal, cliquesTotal];
       
