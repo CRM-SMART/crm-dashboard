@@ -890,7 +890,7 @@
   </div>
 
   <script>
-    const CSV_URL = './dados_dashboard.csv';
+    const CSV_URL = './dados_dashboard.csv?v=' + new Date().toISOString().slice(0, 10);
     const GRP_COLORS = { Direct: '#a078f0', 'Not Set': '#8a8e96', CRM: '#1fd196', Paid: '#f07040', Organic: '#f0a030', Referral: '#40f0d0', Blog: '#f040a0', Others: '#4b8ef5' };
     const palette = ['#e05070', '#e0b040', '#40e0c0', '#9050e0', '#f06090', '#70c040', '#8090a0'];
     const C = { crm: '#1fd196', outros: '#4b8ef5', site: '#a078f0', app: '#f07040', cmpA: '#1fd196', cmpB: '#f0a030' };
