@@ -940,7 +940,7 @@
     </div>
     
   <script>
-    const CSV_URL = './dados_dashboard.csv';
+    const CSV_URL = './dados_dashboard.csv?v=' + new Date().toISOString().slice(0, 10);
     const C = { crm: '#a078f0', site: '#4b8ef5', app: '#1fd196', total: '#f2a63d' };
     const TF = { family: "'DM Sans', sans-serif", size: 10 };
     const TICK = '#8a8e96';
@@ -2472,7 +2472,7 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
     }
 
     function loadInsiderData() {
-      Papa.parse('dados_insider.csv', {
+      Papa.parse('dados_insider.csv?v=' + new Date().toISOString().slice(0, 10), {
         download: true, header: true, skipEmptyLines: true,
         complete: function (res) {
           rawInsider = res.data.map(r => ({
