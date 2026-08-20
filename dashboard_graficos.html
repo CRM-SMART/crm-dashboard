@@ -1259,8 +1259,10 @@
       // -------------------------------------------------------------
       // --- LOGICA DE RENDERIZAÇÃO DOS GRÁFICOS ---
       // -------------------------------------------------------------
-      const customMinEvol = document.getElementById('evolRevMin').value !== "" ? Number(document.getElementById('evolRevMin').value) : undefined;
-      const customMaxEvol = document.getElementById('evolRevMax').value !== "" ? Number(document.getElementById('evolRevMax').value) : undefined;
+      const minEl = document.getElementById('evolRevMin');
+      const maxEl = document.getElementById('evolRevMax');
+      const customMinEvol = minEl && minEl.value !== "" ? Number(minEl.value) : undefined;
+      const customMaxEvol = maxEl && maxEl.value !== "" ? Number(maxEl.value) : undefined;
 
       const keyFn = (dStr) => {
         if (!dStr || dStr.length < 10) return '';
@@ -2555,11 +2557,16 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
         input.addEventListener('input', updateAll);
       });
 
-      document.getElementById('btn-reset-evol-axis').addEventListener('click', () => {
-        document.getElementById('evolRevMin').value = '';
-        document.getElementById('evolRevMax').value = '';
-        updateAll();
-      });
+      const btnResetEvol = document.getElementById('btn-reset-evol-axis');
+      if (btnResetEvol) {
+        btnResetEvol.addEventListener('click', () => {
+          const minEl = document.getElementById('evolRevMin');
+          const maxEl = document.getElementById('evolRevMax');
+          if (minEl) minEl.value = '';
+          if (maxEl) maxEl.value = '';
+          updateAll();
+        });
+      }
 
       document.getElementById('f-inicio').addEventListener('change', updateAll);
       document.getElementById('f-fim').addEventListener('change', updateAll);
