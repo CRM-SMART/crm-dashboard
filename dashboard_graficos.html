@@ -856,7 +856,10 @@
       <div class="col" style="flex: 1; min-width: 0;">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Eficiência CRM (Receita x Sessões x Conversão)</div>
+            <div>
+              <div class="card-title">Eficiência CRM (Receita x Sessões x Conversão)</div>
+              <div style="font-size: 11.5px; color: var(--text2);" id="sub-crm-eficiencia-mom">Métricas de eficiência</div>
+            </div>
             <div class="legend" id="leg-crm-eficiencia-mensal"></div>
           </div>
           <div style="position:relative; width:100%; height:300px;">
@@ -2232,12 +2235,15 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
 
         callGeminiAPI(key, prompt);
       } else {
-        document.getElementById('crm-highlights-grid').innerHTML = `
-          <div class="highlight-card">
-            <h3>🔑 Configuração de API Pendente</h3>
-            <p>Insira sua chave nas configurações para receber as análises automatizadas do Gemini.</p>
-          </div>
-        `;
+        const gridEl = document.getElementById('crm-highlights-grid');
+        if (gridEl) {
+          gridEl.innerHTML = `
+            <div class="highlight-card">
+              <h3>🔑 Configuração de API Pendente</h3>
+              <p>Insira sua chave nas configurações para receber as análises automatizadas do Gemini.</p>
+            </div>
+          `;
+        }
       }
     }
 
@@ -2263,8 +2269,9 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
           `;
         });
         
-        if (cards.length > 0) {
-          document.getElementById('crm-highlights-grid').innerHTML = cards.join('');
+        const gridEl = document.getElementById('crm-highlights-grid');
+        if (gridEl && cards.length > 0) {
+          gridEl.innerHTML = cards.join('');
         }
       } catch (e) {
         console.error("Gemini Error:", e);
