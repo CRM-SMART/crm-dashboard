@@ -1178,6 +1178,21 @@
     }
 
     function updateAll() {
+      // Popular selectedOrigens a partir dos checkboxes marcados
+      window.selectedOrigens = Array.from(document.querySelectorAll('#ms-list input:checked')).map(cb => cb.value);
+
+      // Atualizar o texto do botão do multi-select
+      const msLabel = document.getElementById('ms-label');
+      if (msLabel) {
+        if (window.selectedOrigens.length === 0) {
+          msLabel.textContent = 'Nenhuma selecionada';
+        } else if (window.selectedOrigens.length === 1) {
+          msLabel.textContent = window.selectedOrigens[0].slice(0, 20) + '...';
+        } else {
+          msLabel.textContent = `${window.selectedOrigens.length} selecionadas`;
+        }
+      }
+
       const ini = document.getElementById('f-inicio').value;
       const fim = document.getElementById('f-fim').value;
       const pdv = document.getElementById('f-pdv').value;
@@ -2594,6 +2609,12 @@ Gere exatamente 3 bullet points curtos em português identificando tendências d
           const statusTxt = document.getElementById('status-txt');
           if (statusTxt) {
             statusTxt.textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo ? ultimo.split('-').reverse().join('/') : '—');
+          }
+          
+          if (ultimo) {
+            const firstDay = ultimo.slice(0, 8) + '01';
+            document.getElementById('f-inicio').value = firstDay;
+            document.getElementById('f-fim').value = ultimo;
           }
           updateAll();
     }
