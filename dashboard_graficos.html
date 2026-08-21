@@ -1215,8 +1215,74 @@
 
       // Filtrar base da Insider
       let insiderFiltered = rawInsider.filter(r => {
+        // Filtro Data
         if (!r.date || r.date < ini || r.date > fim) return false;
+
+        // Filtro Segmento
         if (segmentFilter !== 'all' && getCrmSegment(r.campanha) !== segmentFilter) return false;
+
+        // Filtro In-App
+        if (inappMode === 'without') {
+          const cLower = r.campanha.toLowerCase();
+          if (cLower.includes('in-app') || cLower.includes('inapp') || cLower.includes('in_app')) return false;
+        }
+
+        // Filtro In-Site
+        if (insiteMode === 'without') {
+          const cLower = r.campanha.toLowerCase();
+          if (cLower.includes('insite')) return false;
+        }
+
+        // Filtro Tipo de Disparo
+        const isAuto = r.campanha.toLowerCase().includes('architect') || r.campanha.toLowerCase().includes('architecht') || r.campanha.toLowerCase().includes('firebase') || r.campanha.toLowerCase().includes('pushnews');
+        if (disparo === 'auto' && !isAuto) return false;
+        if (disparo === 'manual' && isAuto) return false;
+
+        // Filtro Busca Campanha
+        if (campanhaBusca && !r.campanha.toLowerCase().includes(campanhaBusca)) return false;
+
+        // Filtro Subcanal CRM
+        if (subcanal !== 'all') {
+          const sub = getCrmSubChannel(r.campanha);
+          if (sub !== subcanal) return false;
+        }
+
+        // Filtro Mídias Selecionadas no Multi-select
+        if (window.selectedOrigens && window.selectedOrigens.length > 0) {
+          let match = false;
+          for (const orig of window.selectedOrigens) {
+            const origLower = orig.toLowerCase();
+            const campLower = r.campanha.toLowerCase();
+            
+            if (origLower.includes('apppush') || origLower.includes('app_push') || origLower.includes('notification')) {
+              if (campLower.includes('apppush') || campLower.includes('app_push') || campLower.includes('notification')) {
+                match = true; break;
+              }
+            }
+            if (origLower.includes('whatsapp') || origLower.includes('wpp') || origLower.includes('whats')) {
+              if (campLower.includes('whatsapp') || campLower.includes('wpp') || campLower.includes('whats')) {
+                match = true; break;
+              }
+            }
+            if (origLower.includes('email') || origLower.includes('e-mail') || origLower.includes('architect_email')) {
+              if (campLower.includes('email') || campLower.includes('e-mail') || campLower.includes('architect_email')) {
+                match = true; break;
+              }
+            }
+            if (origLower.includes('web_push') || origLower.includes('webpush') || origLower.includes('pushnews') || origLower.includes('pushnotification') || origLower.includes('web-push')) {
+              if (campLower.includes('web_push') || campLower.includes('webpush') || campLower.includes('pushnews') || campLower.includes('pushnotification') || campLower.includes('web-push')) {
+                match = true; break;
+              }
+            }
+            if (origLower.includes('sms')) {
+              if (campLower.includes('sms')) {
+                match = true; break;
+              }
+            }
+          }
+          if (!match) return false;
+        }
+
         return true;
       });
 
