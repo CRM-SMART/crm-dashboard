@@ -1490,16 +1490,13 @@
           maxDate = ultimo;
           document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo || '—');
 
-          // Fallback if the default loaded date range has no data
-          const currentVal = document.getElementById('f-inicio').value;
-          const hasData = rawData.some(r => r.date === currentVal);
-          if (!hasData && maxDate) {
-            document.getElementById('f-inicio').value = maxDate;
-            document.getElementById('f-fim').value = maxDate;
-            document.getElementById('cmp-a-ini').value = maxDate;
-            document.getElementById('cmp-a-fim').value = maxDate;
+          if (ultimo) {
+            const firstDay = ultimo.slice(0, 8) + '01';
+            document.getElementById('f-inicio').value = firstDay;
+            document.getElementById('f-fim').value = ultimo;
+            document.getElementById('cmp-a-ini').value = firstDay;
+            document.getElementById('cmp-a-fim').value = ultimo;
           } else {
-            // Initialize comparativo dates
             document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
             document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
           }
