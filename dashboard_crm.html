@@ -1855,12 +1855,10 @@ Retorne apenas os 5 blocos de HTML diretamente. Não inclua blocos de markdown c
           maxDate = ultimo;
           document.getElementById('status-txt').textContent = fmt(rawData.length) + ' linhas · último: ' + (ultimo || '—');
 
-          // Fallback if today's date has no data yet
-          const currentVal = document.getElementById('f-inicio').value;
-          const hasData = rawData.some(r => r.date === currentVal);
-          if (!hasData && maxDate) {
-            document.getElementById('f-inicio').value = maxDate;
-            document.getElementById('f-fim').value = maxDate;
+          if (ultimo) {
+            const firstDay = ultimo.slice(0, 8) + '01';
+            document.getElementById('f-inicio').value = firstDay;
+            document.getElementById('f-fim').value = ultimo;
           }
 
           // Populate CRM media sources dropdown
